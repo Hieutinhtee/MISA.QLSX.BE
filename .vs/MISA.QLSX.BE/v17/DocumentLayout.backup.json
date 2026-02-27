@@ -1,12 +1,54 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\FW-Misa-2026\\MISA.QLSX.BE\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|d:\\fw-misa-2026\\misa.qlsx.be\\misa.qlsx.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|solutionrelative:misa.qlsx.infrastructure\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\misa.qlsx.be\\misa.qlsx.core\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\class1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Class1.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Class1.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Class1.cs",
+              "RelativeToolTip": "MISA.QLSX.Infrastructure\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T15:59:02.61Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Class1.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\MISA.QLSX.BE\\MISA.QLSX.Core\\Class1.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Class1.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\MISA.QLSX.BE\\MISA.QLSX.Core\\Class1.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Class1.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-27T15:58:14.753Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

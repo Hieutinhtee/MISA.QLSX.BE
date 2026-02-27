@@ -10,4 +10,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MISA.QLSX.Core\MISA.QLSX.Core.csproj" />
+    <ProjectReference Include="..\MISA.QLSX.Infrastructure\MISA.QLSX.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

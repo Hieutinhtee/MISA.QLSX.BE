@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MISA.QLSX.Core\MISA.QLSX.Core.csproj" />
+  </ItemGroup>
+
 </Project>
