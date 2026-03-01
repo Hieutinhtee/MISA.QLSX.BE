@@ -83,6 +83,18 @@ namespace MISA.QLSX.Core.Services
         }
 
         /// <summary>
+        /// Tùy chỉnh cho thực thể (có thể override ở lớp con) trước khi save
+        /// tính toán hoặc xử lý thêm gì đó
+        /// Created by: TMHieu (07/12/2025)
+        /// </summary>
+        /// <param name="entity">Thực thể cần xử lí.</param>
+        /// <returns>Task hoàn thành sau xử lí.</returns>
+        protected virtual Task BeforeSaveAsync(T entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         /// Lấy tất cả thực thể.
         /// Created by: TMHieu (07/12/2025)
         /// </summary>
@@ -106,6 +118,8 @@ namespace MISA.QLSX.Core.Services
         public virtual async Task<Guid> CreateAsync(T entity)
         {
             await ValidateAsync(entity, null);
+            await BeforeSaveAsync(entity);
+
             // Lấy tất cả property của entity
             var properties = typeof(T).GetProperties();
 

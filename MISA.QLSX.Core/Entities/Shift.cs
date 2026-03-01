@@ -39,11 +39,18 @@ namespace MISA.QLSX.Core.Entities
         public string ProductionShiftName { get; set; }
 
         /// <summary>
+        /// Tên ca làm việc
+        /// </summary>
+        [MaxLength(255)]
+        [Column("production_shift_description")]
+        public string? ProductionShiftDescription { get; set; }
+
+        /// <summary>
         /// Thời gian bắt đầu ca
         /// </summary>
         [Required]
         [Column("production_shift_begin_time")]
-        public TimeSpan ProductionShiftBeginTime { get; set; }
+        public TimeSpan? ProductionShiftBeginTime { get; set; }
 
         /// <summary>
         /// Thời gian bắt đầu nghỉ giữa ca
@@ -56,7 +63,7 @@ namespace MISA.QLSX.Core.Entities
         /// </summary>
         [Required]
         [Column("production_shift_end_time")]
-        public TimeSpan ProductionShiftEndTime { get; set; }
+        public TimeSpan? ProductionShiftEndTime { get; set; }
 
         /// <summary>
         /// Thời gian kết thúc nghỉ giữa ca
