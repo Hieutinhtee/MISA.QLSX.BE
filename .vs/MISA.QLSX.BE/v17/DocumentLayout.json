@@ -1,12 +1,377 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\entities\\shift.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\entities\\shift.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.infrastructure\\repositories\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|solutionrelative:misa.qlsx.infrastructure\\repositories\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.api\\controllers\\basecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\controllers\\basecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\services\\baseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\services\\baseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.api\\controllers\\shiftscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\controllers\\shiftscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.api\\middlewares\\validateexceptionmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\middlewares\\validateexceptionmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\services\\shiftservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\services\\shiftservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\interfaces\\service\\ishiftservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\interfaces\\service\\ishiftservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\interfaces\\service\\ibaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\interfaces\\service\\ibaseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\exceptions\\validateexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\exceptions\\validateexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\exceptions\\notfoundexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\exceptions\\notfoundexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\exceptions\\duplicateexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\exceptions\\duplicateexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\exceptions\\baseexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\exceptions\\baseexception.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\interfaces\\repository\\ishiftrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\interfaces\\repository\\ishiftrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\interfaces\\repository\\ibaserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\interfaces\\repository\\ibaserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.infrastructure\\repositories\\shiftrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|solutionrelative:misa.qlsx.infrastructure\\repositories\\shiftrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\dtos\\responses\\meta.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\dtos\\responses\\meta.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\dtos\\responses\\pagingresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\dtos\\responses\\pagingresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.infrastructure\\connection\\mysqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|solutionrelative:misa.qlsx.infrastructure\\connection\\mysqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "IShiftService.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Interfaces\\Service\\IShiftService.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Interfaces\\Service\\IShiftService.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Interfaces\\Service\\IShiftService.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Interfaces\\Service\\IShiftService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T18:26:06.343Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "IBaseService.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Interfaces\\Service\\IBaseService.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Interfaces\\Service\\IBaseService.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Interfaces\\Service\\IBaseService.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Interfaces\\Service\\IBaseService.cs",
+              "ViewState": "AgIAAEIAAAAAAAAAAAAcwGYAAAAfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T18:25:42.551Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ShiftService.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\ShiftService.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Services\\ShiftService.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\ShiftService.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Services\\ShiftService.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAxwB4AAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T18:25:12.748Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "BaseService.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\BaseService.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Services\\BaseService.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\BaseService.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Services\\BaseService.cs",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAxwFkAAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T18:24:53.986Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "BaseController.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\BaseController.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Api\\Controllers\\BaseController.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\BaseController.cs",
+              "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\BaseController.cs",
+              "ViewState": "AgIAACYAAAAAAAAAAAAkwDUAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T14:29:54.692Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "BaseRepository.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
+              "RelativeToolTip": "MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
+              "ViewState": "AgIAAHUAAAAAAAAAAAAmwH4AAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T03:30:51.873Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Shift.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Entities\\Shift.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Entities\\Shift.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Entities\\Shift.cs*",
+              "RelativeToolTip": "MISA.QLSX.Core\\Entities\\Shift.cs*",
+              "ViewState": "AgIAAD0AAAAAAAAAAAAxwE8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T03:19:05.953Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Program.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Api\\Program.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Program.cs",
+              "RelativeToolTip": "MISA.QLSX.Api\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAA3AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T05:05:56.408Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ValidateException.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Exceptions\\ValidateException.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Exceptions\\ValidateException.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Exceptions\\ValidateException.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Exceptions\\ValidateException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-01T01:01:15.434Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ValidateExceptionMiddleware.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Middlewares\\ValidateExceptionMiddleware.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Api\\Middlewares\\ValidateExceptionMiddleware.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Middlewares\\ValidateExceptionMiddleware.cs",
+              "RelativeToolTip": "MISA.QLSX.Api\\Middlewares\\ValidateExceptionMiddleware.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAmwB4AAAAaAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-01T01:11:07.795Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ShiftsController.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\ShiftsController.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Api\\Controllers\\ShiftsController.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\ShiftsController.cs",
+              "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\ShiftsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-01T01:13:08.018Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "NotFoundException.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Exceptions\\NotFoundException.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Exceptions\\NotFoundException.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Exceptions\\NotFoundException.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Exceptions\\NotFoundException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-01T01:01:08.659Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "DuplicateException.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Exceptions\\DuplicateException.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Exceptions\\DuplicateException.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Exceptions\\DuplicateException.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Exceptions\\DuplicateException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-01T01:01:01.268Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "BaseException.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Exceptions\\BaseException.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Exceptions\\BaseException.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Exceptions\\BaseException.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Exceptions\\BaseException.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-01T01:00:51.698Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "ShiftRepository.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\ShiftRepository.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Repositories\\ShiftRepository.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\ShiftRepository.cs",
+              "RelativeToolTip": "MISA.QLSX.Infrastructure\\Repositories\\ShiftRepository.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAwB4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T09:01:37.169Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\appsettings.json",
+              "RelativeDocumentMoniker": "MISA.QLSX.Api\\appsettings.json",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\appsettings.json",
+              "RelativeToolTip": "MISA.QLSX.Api\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-02-28T05:04:31.907Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Meta.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\DTOs\\Responses\\Meta.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\DTOs\\Responses\\Meta.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\DTOs\\Responses\\Meta.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\DTOs\\Responses\\Meta.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T03:49:52.815Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "PagingResponse.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\DTOs\\Responses\\PagingResponse.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\DTOs\\Responses\\PagingResponse.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\DTOs\\Responses\\PagingResponse.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\DTOs\\Responses\\PagingResponse.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAswA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T03:49:16.297Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "IShiftRepository.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Interfaces\\Repository\\IShiftRepository.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Interfaces\\Repository\\IShiftRepository.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Interfaces\\Repository\\IShiftRepository.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Interfaces\\Repository\\IShiftRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T03:44:13.223Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "IBaseRepository.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Interfaces\\Repository\\IBaseRepository.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Interfaces\\Repository\\IBaseRepository.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Interfaces\\Repository\\IBaseRepository.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Interfaces\\Repository\\IBaseRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGMAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T03:43:51.459Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "MySqlConnectionFactory.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Connection\\MySqlConnectionFactory.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Connection\\MySqlConnectionFactory.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Connection\\MySqlConnectionFactory.cs",
+              "RelativeToolTip": "MISA.QLSX.Infrastructure\\Connection\\MySqlConnectionFactory.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADcAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T03:27:14.064Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }
