@@ -81,18 +81,9 @@ namespace MISA.QLSX.Core.Interfaces.Repository
         /// <param name="page">Trang thứ mấy</param>
         /// <param name="pageSize">Số bản ghi một trang.</param>
         /// <param name="search">Từ khóa tìm kiếm</param>
-        /// <param name="sortBy">Cột cần sắp xếp</param>
-        /// <param name="sortOrder">Hướng sắp xếp (ASC/DESC)</param>
         /// <returns>Đối tượng PagingResponse chứa dữ liệu và metadata</returns>
         /// Created By: TMHieu (07/12/2025)
-        Task<PagingResponse<T>> QueryPagingAsync(
-            int? page,
-            int? pageSize,
-            string? search,
-            string? sortBy,
-            string? sortOrder,
-            string? type = null
-        );
+        Task<PagingResponse<T>> QueryPagingAsync(int? page, int? pageSize, string? search);
 
         /// <summary>
         /// Hàm truy vấn toàn bộ dữ liệu theo điều kiện tìm kiếm và loại bản ghi,
@@ -123,13 +114,5 @@ namespace MISA.QLSX.Core.Interfaces.Repository
             string? type,
             List<Guid>? excludeIds
         );
-
-        /// <summary>
-        /// Bulk insert dùng 1 query thực hiện cho toàn bộ danh sách
-        /// </summary>
-        /// <param name="entities">Danh sách entity cần insert</param>
-        /// Created By: TMHieu (12/12/2025)
-        /// <returns>Số bản ghi insert thành công</returns>
-        Task<int> BulkInsertAsync(IEnumerable<T> entities);
     }
 }

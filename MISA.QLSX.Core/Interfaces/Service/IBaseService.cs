@@ -81,18 +81,9 @@ namespace MISA.QLSX.Core.Interfaces.Service
         /// <param name="page">Trang thứ mấy</param>
         /// <param name="pageSize">Số bản ghi một trang</param>
         /// <param name="search">Từ khóa tìm kiếm</param>
-        /// <param name="sortBy">Cột cần sắp xếp</param>
-        /// <param name="sortOrder">Hướng sắp xếp (ASC/DESC)</param>
         /// <returns>Đối tượng PagingResponse chứa dữ liệu và metadata</returns>
         /// Created By: TMHieu 28/2/2026
-        Task<PagingResponse<T>> QueryPagingAsync(
-            int? page,
-            int? pageSize,
-            string? search,
-            string? sortBy,
-            string? sortOrder,
-            string? type = null
-        );
+        Task<PagingResponse<T>> QueryPagingAsync(int? page, int? pageSize, string? search);
 
         /// <summary>
         /// Hàm truy vấn toàn bộ dữ liệu theo điều kiện tìm kiếm và loại bản ghi,

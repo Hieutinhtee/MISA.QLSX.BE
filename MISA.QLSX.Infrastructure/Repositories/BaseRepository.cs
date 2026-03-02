@@ -373,6 +373,42 @@ namespace MISA.QLSX.Infrastructure.Repositories
             return count > 0;
         }
 
+        #region Paging Helper
+
+        /// <summary>
+        /// Hàm helper xử lý nối chuỗi phân trang
+        /// </summary>
+        /// <param name="page"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="param"></param>
+        /// <param name="currentPage"></param>
+        /// <param name="currentPageSize"></param>
+        /// <returns></returns>
+        protected string BuildPagingClause(
+            int? page,
+            int? pageSize,
+            DynamicParameters param,
+            out int currentPage,
+            out int currentPageSize
+        )
+        {
+            currentPage = page.HasValue && page.Value > 0 ? page.Value : DEFAULT_PAGE;
+
+            currentPageSize =
+                pageSize.HasValue && pageSize.Value > 0
+                    ? Math.Min(pageSize.Value, MAX_PAGE_SIZE)
+                    : DEFAULT_PAGE_SIZE;
+
+            int offset = (currentPage - 1) * currentPageSize;
+
+            param.Add("@Offset", offset);
+            param.Add("@PageSize", currentPageSize);
+
+            return " LIMIT @Offset, @PageSize ";
+        }
+
+        #endregion
+
         /// <summary>
         /// Hàm trả về danh sách có phân trang, tìm kiếm và sắp xếp
         /// Created by TMHieu - 27/2/2026
@@ -380,88 +416,60 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// <param name="page">Trang thứ mấy</param>
         /// <param name="pageSize">Số bản ghi một trang.</param>
         /// <param name="search">Từ khóa tìm kiếm</param>
-        /// <param name="sortBy">cột cần sắp xếp</param>
-        /// <param name="sortOrder">hướng sắp xếp (ASC/DESC)</param>
         /// <returns>Đối tượng PagingResponse chứa dữ liệu và metadata</returns>
         public virtual async Task<PagingResponse<T>> QueryPagingAsync(
             int? page,
             int? pageSize,
-            string? search,
-            string? sortBy,
-            string? sortOrder,
-            string? type = null
+            string? search
         )
         {
             using var conn = Connection;
 
-            int currentPage = page.HasValue && page.Value > 0 ? page.Value : DEFAULT_PAGE;
-
-            bool isFetchAll = !pageSize.HasValue;
-
-            int currentPageSize =
-                pageSize.HasValue && pageSize.Value > 0
-                    ? Math.Min(pageSize.Value, MAX_PAGE_SIZE)
-                    : DEFAULT_PAGE_SIZE;
+            var param = new DynamicParameters();
 
             var searchFields = GetSearchFields();
 
-            string orderClause = "";
-
-            if (!string.IsNullOrWhiteSpace(sortBy) && !string.IsNullOrWhiteSpace(sortOrder))
-            {
-                string direction = sortOrder.ToUpper() == "DESC" ? "DESC" : "ASC";
-                orderClause = $" ORDER BY {ToSnakeCase(sortBy)} {direction} ";
-            }
-            else
-            {
-                orderClause = $" ORDER BY RIGHT({_defaultSortFiled}, 6) * 1 DESC";
-            }
-
             // ===== WHERE =====
-            var where = $"  ";
-
-            if (!string.IsNullOrWhiteSpace(type))
-                where += $" AND {_tableName}_type = @Type ";
+            var where = " WHERE 1=1 ";
 
             if (!string.IsNullOrWhiteSpace(search) && searchFields.Any())
             {
                 var likeParts = searchFields.Select(f => $"{f} LIKE @SearchStr");
                 where += " AND (" + string.Join(" OR ", likeParts) + ") ";
+                param.Add("@SearchStr", $"%{search}%");
             }
 
-            // ===== SQL =====
+            // ===== DEFAULT ORDER =====
+            var orderClause = $" ORDER BY {_defaultSortFiled} DESC ";
+
+            // ===== COUNT =====
             string sqlCount = $"SELECT COUNT(*) FROM {_tableName} {where};";
 
-            string sqlData = isFetchAll
-                ? $@"SELECT * FROM {_tableName} {where} {orderClause};"
-                : $@"SELECT * FROM {_tableName} {where} {orderClause}
-             LIMIT @Offset, @PageSize;";
+            // ===== BASE SQL =====
+            string baseSql = $"SELECT * FROM {_tableName} {where} {orderClause}";
 
-            // ===== Params =====
-            var param = new DynamicParameters();
-            param.Add("@SearchStr", $"%{search}%");
+            // ===== PAGING =====
+            string pagingClause = BuildPagingClause(
+                page,
+                pageSize,
+                param,
+                out int currentPage,
+                out int currentPageSize
+            );
 
-            if (!isFetchAll)
-            {
-                param.Add("@Offset", (currentPage - 1) * currentPageSize);
-                param.Add("@PageSize", currentPageSize);
-            }
+            string finalSql = baseSql + pagingClause;
 
-            if (!string.IsNullOrWhiteSpace(type))
-                param.Add("@Type", type);
-
-            // ===== Execute =====
+            // ===== EXECUTE =====
             var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
-            var data = (await conn.QueryAsync<T>(sqlData, param)).ToList();
+            var data = (await conn.QueryAsync<T>(finalSql, param)).ToList();
 
-            // ===== Response =====
             return new PagingResponse<T>
             {
                 Data = data,
                 Meta = new Meta
                 {
-                    Page = isFetchAll ? 1 : currentPage,
-                    PageSize = isFetchAll ? total : currentPageSize,
+                    Page = currentPage,
+                    PageSize = currentPageSize,
                     Total = total,
                 },
             };
@@ -553,72 +561,6 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     Total = total,
                 },
             };
-        }
-
-        /// <summary>
-        /// Bulk insert dùng 1 query thực hiện cho toàn bộ danh sách
-        /// </summary>
-        /// <param name="entities">Danh sách entity cần insert</param>
-        /// Created by TMHieu - 27/2/2026
-        /// <returns>Số bản ghi insert thành công</returns>
-        public async Task<int> BulkInsertAsync(IEnumerable<T> entities)
-        {
-            if (entities == null || !entities.Any())
-                return 0;
-
-            using var conn = Connection;
-
-            // Lấy danh sách property có [Column] để map cột
-            var properties = typeof(T)
-                .GetProperties()
-                .Where(p => p.GetCustomAttribute<ColumnAttribute>() != null)
-                .ToList();
-
-            // Chuỗi column DB
-            var columns = string.Join(
-                ", ",
-                properties.Select(p => p.GetCustomAttribute<ColumnAttribute>()!.Name)
-            );
-
-            // Chuỗi param
-            var paramNames = string.Join(", ", properties.Select(p => "@" + p.Name));
-
-            // SQL insert
-            var sql = $"INSERT INTO {_tableName} ({columns}) VALUES ({paramNames});";
-
-            // Tạo DynamicParameters cho Dapper
-            var parametersList = entities
-                .Select(entity =>
-                {
-                    var parameters = new DynamicParameters();
-                    foreach (var prop in properties)
-                    {
-                        parameters.Add("@" + prop.Name, prop.GetValue(entity));
-                    }
-                    return parameters;
-                })
-                .ToList();
-
-            int affectedRows = 0;
-
-            // Dapper không có ExecuteAsync(IEnumerable<DynamicParameters>) trực tiếp,
-            // nên dùng transaction để insert hàng loạt trong 1 lần
-            using var transaction = conn.BeginTransaction();
-            try
-            {
-                foreach (var param in parametersList)
-                {
-                    affectedRows += await conn.ExecuteAsync(sql, param, transaction: transaction);
-                }
-                transaction.Commit();
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
-
-            return affectedRows;
         }
     }
 }

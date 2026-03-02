@@ -20,23 +20,21 @@ namespace MISA.QLSX.Core.Entities
         /// </summary>
         [Key]
         [Column("production_shift_id")]
-        public Guid ProductionShiftId { get; set; }
+        public Guid? ProductionShiftId { get; set; }
 
         /// <summary>
         /// Mã ca làm việc
         /// </summary>
-        [Required]
         [MaxLength(20)]
         [Column("production_shift_code")]
-        public string ProductionShiftCode { get; set; }
+        public string? ProductionShiftCode { get; set; }
 
         /// <summary>
         /// Tên ca làm việc
         /// </summary>
-        [Required]
         [MaxLength(50)]
         [Column("production_shift_name")]
-        public string ProductionShiftName { get; set; }
+        public string? ProductionShiftName { get; set; }
 
         /// <summary>
         /// Tên ca làm việc
@@ -48,7 +46,6 @@ namespace MISA.QLSX.Core.Entities
         /// <summary>
         /// Thời gian bắt đầu ca
         /// </summary>
-        [Required]
         [Column("production_shift_begin_time")]
         public TimeSpan? ProductionShiftBeginTime { get; set; }
 
@@ -61,7 +58,6 @@ namespace MISA.QLSX.Core.Entities
         /// <summary>
         /// Thời gian kết thúc ca
         /// </summary>
-        [Required]
         [Column("production_shift_end_time")]
         public TimeSpan? ProductionShiftEndTime { get; set; }
 
@@ -74,38 +70,33 @@ namespace MISA.QLSX.Core.Entities
         /// <summary>
         /// Tổng thời gian làm việc (giờ)
         /// </summary>
-        [Required]
         [Column("production_shift_working_time", TypeName = "decimal(18,2)")]
-        public decimal ProductionShiftWorkingTime { get; set; }
+        public decimal? ProductionShiftWorkingTime { get; set; }
 
         /// <summary>
         /// Tổng thời gian nghỉ (giờ)
         /// </summary>
-        [Required]
         [Column("production_shift_break_time", TypeName = "decimal(18,2)")]
-        public decimal ProductionShiftBreakTime { get; set; }
+        public decimal? ProductionShiftBreakTime { get; set; }
 
         /// <summary>
         /// Trạng thái hoạt động (1 - Đang hoạt động, 0 - Ngừng hoạt động)
         /// </summary>
-        [Required]
         [Column("production_shift_is_active")]
-        public bool ProductionShiftIsActive { get; set; }
+        public bool? ProductionShiftIsActive { get; set; }
 
         /// <summary>
         /// Người tạo
         /// </summary>
-        [Required]
         [MaxLength(255)]
         [Column("production_shift_created_by")]
-        public string ProductionShiftCreatedBy { get; set; }
+        public string? ProductionShiftCreatedBy { get; set; }
 
         /// <summary>
         /// Ngày tạo
         /// </summary>
-        [Required]
         [Column("production_shift_created_date")]
-        public DateTime ProductionShiftCreatedDate { get; set; }
+        public DateTime? ProductionShiftCreatedDate { get; set; }
 
         /// <summary>
         /// Người sửa

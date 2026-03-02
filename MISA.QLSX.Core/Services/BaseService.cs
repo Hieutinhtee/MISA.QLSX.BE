@@ -88,8 +88,9 @@ namespace MISA.QLSX.Core.Services
         /// Created by: TMHieu (07/12/2025)
         /// </summary>
         /// <param name="entity">Thực thể cần xử lí.</param>
+        /// <param name="isUpdate">Xử lí cho update hay không, false là insert</param>
         /// <returns>Task hoàn thành sau xử lí.</returns>
-        protected virtual Task BeforeSaveAsync(T entity)
+        protected virtual Task BeforeSaveAsync(T entity, bool isUpdate = false)
         {
             return Task.CompletedTask;
         }
@@ -118,21 +119,17 @@ namespace MISA.QLSX.Core.Services
         public virtual async Task<Guid> CreateAsync(T entity)
         {
             await ValidateAsync(entity, null);
-            await BeforeSaveAsync(entity);
+            await BeforeSaveAsync(entity, false);
 
             // Lấy tất cả property của entity
             var properties = typeof(T).GetProperties();
-
             foreach (var prop in properties)
             {
-                // Nếu property là Guid và hiện tại là Guid.Empty thì sinh mới
-                if (prop.PropertyType == typeof(Guid))
+                var propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+
+                if (propType == typeof(Guid))
                 {
-                    var currentValue = (Guid)prop.GetValue(entity)!;
-                    if (currentValue == Guid.Empty)
-                    {
-                        prop.SetValue(entity, Guid.NewGuid());
-                    }
+                    prop.SetValue(entity, Guid.NewGuid());
                 }
             }
             return await _repo.InsertAsync(entity);
@@ -184,13 +181,10 @@ namespace MISA.QLSX.Core.Services
         public virtual Task<PagingResponse<T>> QueryPagingAsync(
             int? page,
             int? pageSize,
-            string? search,
-            string? sortBy,
-            string? sortOrder,
-            string? type = null
+            string? search
         )
         {
-            return _repo.QueryPagingAsync(page, pageSize, search, sortBy, sortOrder, type);
+            return _repo.QueryPagingAsync(page, pageSize, search);
         }
 
         /// <summary>

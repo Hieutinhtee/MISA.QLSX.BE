@@ -90,9 +90,12 @@ namespace MISA.QLSX.Core.Services
         /// <param name="shift">Thực thể cần xử lí.</param>
         /// <param name="id">ID tùy chọn để xử lí (ví dụ khi update).</param>
         /// <returns>Task hoàn thành sau xử lí.</returns>
-        protected override Task BeforeSaveAsync(Shift shift)
+        protected override Task BeforeSaveAsync(Shift shift, bool isUpdate = false)
         {
             CalculateWorkingAndBreakTime(shift);
+            if (!isUpdate)
+                shift.ProductionShiftCreatedDate = DateTime.Now;
+            shift.ProductionShiftModifiedDate = DateTime.Now;
 
             return Task.CompletedTask;
         }
@@ -152,52 +155,88 @@ namespace MISA.QLSX.Core.Services
                 throw new ValidateException("ShiftCode duplicate", "Mã ca đã tồn tại");
             }
 
-            //Validate nếu có nhập thời gian nghỉ
+            // ===== VALIDATE THỜI GIAN =====
+
             var begin = shift.ProductionShiftBeginTime!.Value;
             var end = shift.ProductionShiftEndTime!.Value;
+
+            // Không cho 2 mốc ca trùng nhau
+            if (begin == end)
+            {
+                throw new ValidateException(
+                    "Shift time invalid",
+                    "Giờ vào ca và giờ hết ca không được trùng nhau"
+                );
+            }
+
+            // Chuẩn hóa ca làm lên trục 48h (tính theo phút)
+            int shiftBegin = (int)begin.TotalMinutes;
+            int shiftEnd = (int)end.TotalMinutes;
+
+            if (shiftEnd <= shiftBegin)
+            {
+                shiftEnd += 24 * 60;
+            }
+
+            int shiftDuration = shiftEnd - shiftBegin;
+
+            // ===== VALIDATE NGHỈ =====
 
             var breakBegin = shift.ProductionShiftBeginBreakTime;
             var breakEnd = shift.ProductionShiftEndBreakTime;
 
             // Nếu có khai báo nghỉ thì phải đủ cặp
             if (breakBegin != null && breakEnd == null)
+            {
                 throw new ValidateException(
                     "BreakEnd required",
                     "Phải nhập giờ kết thúc nghỉ giữa ca"
                 );
+            }
 
             if (breakBegin == null && breakEnd != null)
+            {
                 throw new ValidateException(
                     "BreakBegin required",
                     "Phải nhập giờ bắt đầu nghỉ giữa ca"
                 );
+            }
 
-            // Nếu có nghỉ
             if (breakBegin != null && breakEnd != null)
             {
-                var bb = breakBegin.Value;
-                var be = breakEnd.Value;
-
-                // BreakEnd phải lớn hơn BreakBegin
-                if (be < bb)
+                // Không cho 2 mốc nghỉ trùng nhau
+                if (breakBegin.Value == breakEnd.Value)
+                {
                     throw new ValidateException(
                         "Break time invalid",
-                        "Giờ kết thúc nghỉ phải lớn hơn giờ bắt đầu nghỉ"
+                        "Giờ bắt đầu nghỉ và giờ kết thúc nghỉ không được trùng nhau"
                     );
+                }
 
-                // Hai mốc thời gian Không được bằng nhau
-                if (be == bb)
-                    throw new ValidateException(
-                        "Break time equal",
-                        "Thời gian bắt đầu và kết thúc nghỉ không được trùng nhau"
-                    );
+                int bb = (int)breakBegin.Value.TotalMinutes;
+                int be = (int)breakEnd.Value.TotalMinutes;
 
-                // Break phải nằm trong ca làm
-                if (bb < begin || be > end)
+                // Đưa break về cùng trục thời gian với ca
+                if (bb < shiftBegin)
+                {
+                    bb += 24 * 60;
+                }
+
+                if (be <= bb)
+                {
+                    be += 24 * 60;
+                }
+
+                int breakDuration = be - bb;
+
+                // Nghỉ phải nằm trong ca
+                if (bb < shiftBegin || be > shiftEnd)
+                {
                     throw new ValidateException(
                         "Break out of range",
                         "Thời gian nghỉ phải nằm trong khoảng thời gian làm việc"
                     );
+                }
             }
         }
         #endregion Method

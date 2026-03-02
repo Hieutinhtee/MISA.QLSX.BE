@@ -142,29 +142,16 @@ namespace MISA.QLSX.Api.Controllers
         /// <param name="page">Số trang hiện tại (mặc định là 1)</param>
         /// <param name="pageSize">Kích thước trang (mặc định là 100)</param>
         /// <param name="search">Chuỗi tìm kiếm</param>
-        /// <param name="sortBy">Tên trường muốn sắp xếp</param>
-        /// <param name="sortOrder">Thứ tự sắp xếp (asc/desc)</param>
-        /// <param name="type">Tham số lọc theo loại (nếu có)</param>
         /// <returns>Đối tượng PagingResponse chứa danh sách dữ liệu và thông tin meta</returns>
         /// Created by TMHieu - 7/12/2025
         [HttpGet("paging")]
         public async Task<PagingResponse<T>> GetPaging(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 100,
-            [FromQuery] string? search = null,
-            [FromQuery] string? sortBy = null,
-            [FromQuery] string? sortOrder = null,
-            [FromQuery] string? type = null
+            [FromQuery] string? search = null
         )
         {
-            var response = await _service.QueryPagingAsync(
-                page,
-                pageSize,
-                search,
-                sortBy,
-                sortOrder,
-                type
-            );
+            var response = await _service.QueryPagingAsync(page, pageSize, search);
             return response;
         }
 
