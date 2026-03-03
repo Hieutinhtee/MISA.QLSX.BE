@@ -286,9 +286,29 @@ namespace MISA.QLSX.Infrastructure.Repositories
         public virtual async Task<int> DeleteAsync(Guid id)
         {
             using var conn = Connection;
-            // SQL UPDATE để xóa mềm (set is_deleted = 1)
             var sql = $"DELETE FROM {_tableName} WHERE {_idColumn} = @Id";
             return await conn.ExecuteAsync(sql, new { Id = id });
+        }
+
+        /// <summary>
+        /// Thực hiện xóa  hàng loạt bản ghi
+        /// </summary>
+        /// <param name="ids">Danh sách ID (Guid) bản ghi cần xóa mềm</param>
+        /// <returns>Tổng số bản ghi đã bị ảnh hưởng</returns>
+        /// Created by TMHieu - 8/12/2025
+        public async Task<int> DeleteManyAsync(List<Guid> ids)
+        {
+            if (ids == null || ids.Count == 0)
+                return 0;
+
+            using var conn = Connection;
+
+            var sql =
+                $@"DELETE FROM `{_tableName}`
+                         WHERE `{_idColumn}` IN @Ids;
+            ";
+
+            return await conn.ExecuteAsync(sql, new { Ids = ids });
         }
 
         /// <summary>

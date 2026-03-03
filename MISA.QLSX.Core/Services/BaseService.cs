@@ -146,6 +146,7 @@ namespace MISA.QLSX.Core.Services
         {
             await EnsureExistsAsync(id);
             await ValidateAsync(entity, id);
+            await BeforeSaveAsync(entity, true);
             return await _repo.UpdateAsync(id, entity);
         }
 
@@ -218,6 +219,27 @@ namespace MISA.QLSX.Core.Services
         )
         {
             return _repo.QueryAllExcludeAsync(search, type, excludeIds);
+        }
+
+        /// <summary>
+        /// Thực hiện xóa  hàng loạt bản ghi
+        /// </summary>
+        /// <param name="ids">Danh sách ID (Guid) bản ghi cần xóa mềm</param>
+        /// <returns>Tổng số bản ghi đã bị ảnh hưởng</returns>
+        /// Created by TMHieu - 8/12/2025
+        public async Task<int> DeleteManyAsync(List<Guid> ids)
+        {
+            // Kiểm tra input rỗng
+            if (ids == null || ids.Count == 0)
+                return 0;
+
+            // Có thể check id trùng
+            ids = ids.Distinct().ToList();
+
+            // Gọi repository xử lý soft delete
+            int affected = await _repo.DeleteManyAsync(ids);
+
+            return affected;
         }
     }
 }

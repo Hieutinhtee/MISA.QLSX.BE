@@ -191,6 +191,29 @@ namespace MISA.QLSX.Api.Controllers
             return data;
         }
 
+        /// <summary>
+        /// Thực hiện xóa 1 hoặc hàng loạt các bản ghi
+        /// </summary>
+        /// <param name="ids">Danh sách ID (Guid) của các bản ghi Khách hàng cần xóa mềm</param>
+        /// <returns>Kết quả HTTP 200 OK kèm theo số lượng bản ghi đã bị ảnh hưởng</returns>
+        /// Created by TMHieu - 7/12/2025
+        [HttpPost("batch-delete")]
+        public async Task<IActionResult> DeleteMany([FromBody] List<Guid> ids)
+        {
+            if (ids == null || ids.Count == 0)
+            {
+                // Ném lỗi ValidateException để Middleware bắt, thay vì trả về BadRequest trực tiếp
+                throw new ValidateException(
+                    "Danh sách Id trống.",
+                    "Danh sách bản ghi cẫn xóa không được để trống."
+                );
+            }
+
+            int affected = await _service.DeleteManyAsync(ids);
+
+            return Ok(new { TotalAffected = affected });
+        }
+
         #endregion Method
     }
 }

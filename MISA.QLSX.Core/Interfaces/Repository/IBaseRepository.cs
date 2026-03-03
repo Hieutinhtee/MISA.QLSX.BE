@@ -114,5 +114,13 @@ namespace MISA.QLSX.Core.Interfaces.Repository
             string? type,
             List<Guid>? excludeIds
         );
+
+        /// <summary>
+        /// Thực hiện xóa  hàng loạt bản ghi
+        /// </summary>
+        /// <param name="ids">Danh sách ID (Guid) bản ghi cần xóa mềm</param>
+        /// <returns>Tổng số bản ghi đã bị ảnh hưởng</returns>
+        /// Created by TMHieu - 8/12/2025
+        Task<int> DeleteManyAsync(List<Guid> ids);
     }
 }
