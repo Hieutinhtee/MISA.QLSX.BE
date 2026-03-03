@@ -239,6 +239,13 @@ namespace MISA.QLSX.Core.Services
                 }
             }
         }
+
+        public Task<int> UpdateIsActiveMany(List<Guid> ids, bool isActive)
+        {
+            var columnName = "production_shift_is_active";
+            return _repo.BulkUpdateSameValueAsync(ids, columnName, isActive);
+        }
+
         #endregion Method
     }
 }
