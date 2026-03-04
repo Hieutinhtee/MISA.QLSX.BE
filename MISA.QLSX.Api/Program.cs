@@ -3,6 +3,7 @@ using MISA.QLSX.Core.Interfaces.Service;
 using MISA.QLSX.Core.Services;
 using MISA.QLSX.Infrastructure.Connection;
 using MISA.QLSX.Infrastructure.Repositories;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,8 @@ builder.Services.AddCors(options =>
     );
 });
 
+//set license code cho EPPlus
+ExcelPackage.License.SetNonCommercialPersonal("thaiminhhieu");
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

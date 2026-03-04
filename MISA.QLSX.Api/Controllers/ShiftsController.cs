@@ -59,6 +59,18 @@ namespace MISA.QLSX.Api.Controllers
             return Ok(new { TotalAffected = affected });
         }
 
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportShift()
+        {
+            var file = await _shiftService.ExportShiftExcelAsync();
+
+            return File(
+                file,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "Shift.xlsx"
+            );
+        }
+
         #endregion Method
     }
 }

@@ -7,6 +7,7 @@ using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Core.Exceptions;
 using MISA.QLSX.Core.Interfaces.Repository;
 using MISA.QLSX.Core.Interfaces.Service;
+using OfficeOpenXml;
 
 namespace MISA.QLSX.Core.Services
 {
@@ -34,6 +35,49 @@ namespace MISA.QLSX.Core.Services
         #endregion Constructor
 
         #region Method
+
+        public async Task<byte[]> ExportShiftExcelAsync()
+        {
+            var shifts = await GetAllAsync();
+
+            ExcelPackage.License.SetNonCommercialPersonal("TMHieu");
+
+            using var package = new ExcelPackage();
+            var ws = package.Workbook.Worksheets.Add("Shifts");
+
+            // Header
+            ws.Cells[1, 1].Value = "Mã ca";
+            ws.Cells[1, 2].Value = "Tên ca";
+            ws.Cells[1, 3].Value = "Giờ vào";
+            ws.Cells[1, 4].Value = "Giờ ra";
+            ws.Cells[1, 5].Value = "Giờ nghỉ bắt đầu";
+            ws.Cells[1, 6].Value = "Giờ nghỉ kết thúc";
+            ws.Cells[1, 7].Value = "Thời gian làm việc";
+            ws.Cells[1, 8].Value = "Thời gian nghỉ";
+            ws.Cells[1, 9].Value = "Trạng thái";
+
+            int row = 2;
+
+            foreach (var s in shifts)
+            {
+                ws.Cells[row, 1].Value = s.ProductionShiftCode;
+                ws.Cells[row, 2].Value = s.ProductionShiftName;
+                ws.Cells[row, 3].Value = s.ProductionShiftBeginTime?.ToString(@"hh\:mm");
+                ws.Cells[row, 4].Value = s.ProductionShiftEndTime?.ToString(@"hh\:mm");
+                ws.Cells[row, 5].Value = s.ProductionShiftBeginBreakTime?.ToString(@"hh\:mm");
+                ws.Cells[row, 6].Value = s.ProductionShiftEndBreakTime?.ToString(@"hh\:mm");
+                ws.Cells[row, 7].Value = s.ProductionShiftWorkingTime;
+                ws.Cells[row, 8].Value = s.ProductionShiftBreakTime;
+                ws.Cells[row, 9].Value =
+                    s.ProductionShiftIsActive == true ? "Đang sử dụng" : "Ngừng sử dụng";
+
+                row++;
+            }
+
+            ws.Cells.AutoFitColumns();
+
+            return package.GetAsByteArray();
+        }
 
         /// <summary>
         /// Tính toán khoảng thời gian giữa 2 mốc thời gian
