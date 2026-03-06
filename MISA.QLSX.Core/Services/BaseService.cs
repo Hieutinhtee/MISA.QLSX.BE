@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.DTOs.Responses;
 using MISA.QLSX.Core.Exceptions;
 using MISA.QLSX.Core.Interfaces.Repository;
@@ -179,13 +180,9 @@ namespace MISA.QLSX.Core.Services
         /// Lấy danh sách entity có phân trang, tìm kiếm và sắp xếp
         /// Created By: TMHieu (07/12/2025)
         /// </summary>
-        public virtual Task<PagingResponse<T>> QueryPagingAsync(
-            int? page,
-            int? pageSize,
-            string? search
-        )
+        public virtual Task<PagingResponse<T>> QueryPagingAsync(QueryRequest request)
         {
-            return _repo.QueryPagingAsync(page, pageSize, search);
+            return _repo.QueryPagingAsync(request);
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.DTOs.Responses;
 using MISA.QLSX.Core.Exceptions;
 using MISA.QLSX.Core.Interfaces.Service;
@@ -144,14 +145,10 @@ namespace MISA.QLSX.Api.Controllers
         /// <param name="search">Chuỗi tìm kiếm</param>
         /// <returns>Đối tượng PagingResponse chứa danh sách dữ liệu và thông tin meta</returns>
         /// Created by TMHieu - 7/12/2025
-        [HttpGet("paging")]
-        public async Task<PagingResponse<T>> GetPaging(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 100,
-            [FromQuery] string? search = null
-        )
+        [HttpPost("paging")]
+        public async Task<PagingResponse<T>> GetPaging([FromBody] QueryRequest request)
         {
-            var response = await _service.QueryPagingAsync(page, pageSize, search);
+            var response = await _service.QueryPagingAsync(request);
             return response;
         }
 

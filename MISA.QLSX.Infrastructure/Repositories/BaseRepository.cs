@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Dapper;
+using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.DTOs.Responses;
 using MISA.QLSX.Core.Interfaces.Repository;
 using MISA.QLSX.Infrastructure.Connection;
@@ -38,7 +39,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
         // ===== Normalize paging =====
         const int DEFAULT_PAGE = 1;
-        const int DEFAULT_PAGE_SIZE = 100;
+        const int DEFAULT_PAGE_SIZE = 20;
         const int MAX_PAGE_SIZE = 500;
 
         /// <summary>
@@ -437,41 +438,186 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// <param name="pageSize">Số bản ghi một trang.</param>
         /// <param name="search">Từ khóa tìm kiếm</param>
         /// <returns>Đối tượng PagingResponse chứa dữ liệu và metadata</returns>
-        public virtual async Task<PagingResponse<T>> QueryPagingAsync(
-            int? page,
-            int? pageSize,
-            string? search
-        )
+        //public virtual async Task<PagingResponse<T>> QueryPagingAsync(
+        //    int? page,
+        //    int? pageSize,
+        //    string? search
+        //)
+        //{
+        //    using var conn = Connection;
+
+        //    var param = new DynamicParameters();
+
+        //    var searchFields = GetSearchFields();
+
+        //    // ===== WHERE =====
+        //    var where = " WHERE 1=1 ";
+
+        //    if (!string.IsNullOrWhiteSpace(search) && searchFields.Any())
+        //    {
+        //        var likeParts = searchFields.Select(f => $"{f} LIKE @SearchStr");
+        //        where += " AND (" + string.Join(" OR ", likeParts) + ") ";
+        //        param.Add("@SearchStr", $"%{search}%");
+        //    }
+
+        //    // ===== DEFAULT ORDER =====
+        //    var orderClause = $" ORDER BY {_defaultSortFiled} DESC ";
+
+        //    // ===== COUNT =====
+        //    string sqlCount = $"SELECT COUNT(*) FROM {_tableName} {where};";
+
+        //    // ===== BASE SQL =====
+        //    string baseSql = $"SELECT * FROM {_tableName} {where} {orderClause}";
+
+        //    // ===== PAGING =====
+        //    string pagingClause = BuildPagingClause(
+        //        page,
+        //        pageSize,
+        //        param,
+        //        out int currentPage,
+        //        out int currentPageSize
+        //    );
+
+        //    string finalSql = baseSql + pagingClause;
+
+        //    // ===== EXECUTE =====
+        //    var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
+        //    var data = (await conn.QueryAsync<T>(finalSql, param)).ToList();
+
+        //    return new PagingResponse<T>
+        //    {
+        //        Data = data,
+        //        Meta = new Meta
+        //        {
+        //            Page = currentPage,
+        //            PageSize = currentPageSize,
+        //            Total = total,
+        //        },
+        //    };
+        //}
+
+        public virtual async Task<PagingResponse<T>> QueryPagingAsync(QueryRequest request)
         {
             using var conn = Connection;
-
-            var param = new DynamicParameters();
-
             var searchFields = GetSearchFields();
 
-            // ===== WHERE =====
+            var param = new DynamicParameters();
             var where = " WHERE 1=1 ";
 
-            if (!string.IsNullOrWhiteSpace(search) && searchFields.Any())
+            int index = 0;
+
+            //Search
+            if (!string.IsNullOrWhiteSpace(request.Search) && searchFields.Any())
             {
                 var likeParts = searchFields.Select(f => $"{f} LIKE @SearchStr");
                 where += " AND (" + string.Join(" OR ", likeParts) + ") ";
-                param.Add("@SearchStr", $"%{search}%");
+                param.Add("@SearchStr", $"%{request.Search}%");
             }
 
-            // ===== DEFAULT ORDER =====
-            var orderClause = $" ORDER BY {_defaultSortFiled} DESC ";
+            //Filter
+            if (request.Filters != null && request.Filters.Any())
+            {
+                foreach (var filter in request.Filters)
+                {
+                    string paramName = $"@p{index}";
+                    index++;
+
+                    switch (filter.Operator)
+                    {
+                        // ===== NUMBER / DATE =====
+                        case "eq":
+                            where += $" AND {filter.Field} = {paramName}";
+                            param.Add(paramName, filter.Value);
+                            break;
+
+                        case "lt":
+                            where += $" AND {filter.Field} < {paramName}";
+                            param.Add(paramName, filter.Value);
+                            break;
+
+                        case "lte":
+                            where += $" AND {filter.Field} <= {paramName}";
+                            param.Add(paramName, filter.Value);
+                            break;
+
+                        case "gt":
+                            where += $" AND {filter.Field} > {paramName}";
+                            param.Add(paramName, filter.Value);
+                            break;
+
+                        case "gte":
+                            where += $" AND {filter.Field} >= {paramName}";
+                            param.Add(paramName, filter.Value);
+                            break;
+
+                        // ===== STRING =====
+                        case "contains":
+                            where += $" AND {filter.Field} LIKE {paramName}";
+                            param.Add(paramName, $"%{filter.Value}%");
+                            break;
+
+                        case "notcontains":
+                            where += $" AND {filter.Field} NOT LIKE {paramName}";
+                            param.Add(paramName, $"%{filter.Value}%");
+                            break;
+
+                        case "starts":
+                            where += $" AND {filter.Field} LIKE {paramName}";
+                            param.Add(paramName, $"{filter.Value}%");
+                            break;
+
+                        case "ends":
+                            where += $" AND {filter.Field} LIKE {paramName}";
+                            param.Add(paramName, $"%{filter.Value}");
+                            break;
+
+                        case "neq":
+                            where += $" AND {filter.Field} <> {paramName}";
+                            param.Add(paramName, filter.Value);
+                            break;
+
+                        // ===== STATUS =====
+                        case "active":
+                            where += $" AND {filter.Field} = TRUE";
+                            break;
+
+                        case "inactive":
+                            where += $" AND {filter.Field} = FALSE";
+                            break;
+                    }
+                }
+            }
+
+            // ===== SORT =====
+
+            string orderClause = "";
+
+            if (request.Sorts != null && request.Sorts.Any())
+            {
+                var orderParts = request.Sorts.Select(s =>
+                    $"{ToSnakeCase(s.Field)} {(s.Direction.ToUpper() == "DESC" ? "DESC" : "ASC")}"
+                );
+
+                orderClause = " ORDER BY " + string.Join(", ", orderParts);
+            }
+            else
+            {
+                orderClause = $" ORDER BY {_defaultSortFiled} DESC ";
+            }
 
             // ===== COUNT =====
-            string sqlCount = $"SELECT COUNT(*) FROM {_tableName} {where};";
+
+            string sqlCount = $"SELECT COUNT(*) FROM {_tableName} {where}";
 
             // ===== BASE SQL =====
+
             string baseSql = $"SELECT * FROM {_tableName} {where} {orderClause}";
 
             // ===== PAGING =====
+
             string pagingClause = BuildPagingClause(
-                page,
-                pageSize,
+                request.Page,
+                request.PageSize,
                 param,
                 out int currentPage,
                 out int currentPageSize
@@ -479,7 +625,6 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
             string finalSql = baseSql + pagingClause;
 
-            // ===== EXECUTE =====
             var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
             var data = (await conn.QueryAsync<T>(finalSql, param)).ToList();
 

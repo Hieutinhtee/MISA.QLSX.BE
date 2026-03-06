@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.DTOs.Responses;
 
 namespace MISA.QLSX.Core.Interfaces.Service
@@ -83,7 +84,7 @@ namespace MISA.QLSX.Core.Interfaces.Service
         /// <param name="search">Từ khóa tìm kiếm</param>
         /// <returns>Đối tượng PagingResponse chứa dữ liệu và metadata</returns>
         /// Created By: TMHieu 28/2/2026
-        Task<PagingResponse<T>> QueryPagingAsync(int? page, int? pageSize, string? search);
+        Task<PagingResponse<T>> QueryPagingAsync(QueryRequest request);
 
         /// <summary>
         /// Hàm truy vấn toàn bộ dữ liệu theo điều kiện tìm kiếm và loại bản ghi,
