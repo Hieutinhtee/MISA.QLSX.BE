@@ -6,6 +6,7 @@ using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Dapper;
 using MISA.QLSX.Core.DTOs.Requests;
@@ -113,12 +114,21 @@ namespace MISA.QLSX.Infrastructure.Repositories
         protected IDbConnection Connection => _factory.CreateConnection();
 
         /// <summary>
-        /// Phương thức abstract để lấy danh sách các trường hợp lệ cho sort (whitelist để tránh SQL injection).
+        /// Phương thức abstract để lấy danh sách các trường hợp lệ cho tìm kiếm (whitelist để tránh SQL injection).
         /// Phải override ở repository con.
         /// Created by TMHieu - 27/2/2026
         /// </summary>
         /// <returns>HashSet các tên cột hợp lệ.</returns>
         protected abstract HashSet<string> GetSearchFields();
+
+        /// <summary>
+        /// Phương thức abstract để lấy danh sách các trường hợp lệ cho filter (whitelist để tránh SQL injection).
+        /// Phải override ở repository con.
+        /// Created by TMHieu - 27/2/2026
+        /// </summary>
+        /// <returns>HashSet các tên cột hợp lệ.</returns>
+        /// </summary>
+        protected abstract Dictionary<string, FieldMapItem> FieldMap { get; }
 
         /// <summary>
         /// Lấy tất cả entity.
@@ -201,10 +211,19 @@ namespace MISA.QLSX.Infrastructure.Repositories
             if (keyProp == null)
                 return Guid.Empty;
 
-            // Lấy danh sách property có [ColumnName] nhưng bỏ cột key
+            // Lấy danh sách property có [ColumnName] nhưng bỏ cột key, cột ngày tạo, tạo bởi ai
             var properties = typeof(T)
                 .GetProperties()
-                .Where(p => p.GetCustomAttribute<ColumnAttribute>() != null && p != keyProp)
+                .Where(p =>
+                {
+                    var col = p.GetCustomAttribute<ColumnAttribute>();
+                    if (col == null || p == keyProp)
+                        return false;
+
+                    var name = p.Name;
+
+                    return !name.EndsWith("CreatedBy") && !name.EndsWith("CreatedDate");
+                })
                 .ToList();
 
             // Tạo chuỗi "Col1 = @Prop1, Col2 = @Prop2"
@@ -249,7 +268,6 @@ namespace MISA.QLSX.Infrastructure.Repositories
         {
             using var conn = Connection;
 
-            // Tìm property có ColumnAttribute khớp với columnName
             var prop = typeof(T)
                 .GetProperties()
                 .FirstOrDefault(p =>
@@ -262,18 +280,44 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     $"Column '{columnName}' không tồn tại trong entity {typeof(T).Name}."
                 );
 
-            // Lấy tên cột thật trong DB
             var dbColumnName =
                 prop.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(prop.Name);
 
-            var idColumn = _idColumn; // đã set trong constructor
+            var idColumn = _idColumn;
 
-            // SQL UPDATE
-            var sql = $"UPDATE {_tableName} SET {dbColumnName} = @Value WHERE {idColumn} IN @Ids";
+            var modifiedByProp = typeof(T)
+                .GetProperties()
+                .FirstOrDefault(p => p.Name.EndsWith("ModifiedBy"));
+
+            var modifiedDateProp = typeof(T)
+                .GetProperties()
+                .FirstOrDefault(p => p.Name.EndsWith("ModifiedDate"));
+
+            var modifiedByColumn = modifiedByProp?.GetCustomAttribute<ColumnAttribute>()?.Name;
+
+            var modifiedDateColumn = modifiedDateProp?.GetCustomAttribute<ColumnAttribute>()?.Name;
+
+            var setParts = new List<string> { $"{dbColumnName} = @Value" };
+
+            if (modifiedByColumn != null)
+                setParts.Add($"{modifiedByColumn} = @ModifiedBy");
+
+            if (modifiedDateColumn != null)
+                setParts.Add($"{modifiedDateColumn} = @ModifiedDate");
+
+            var setClause = string.Join(", ", setParts);
+
+            var sql =
+                $@"
+                    UPDATE {_tableName}
+                    SET {setClause}
+                    WHERE {idColumn} IN @Ids";
 
             var parameters = new DynamicParameters();
             parameters.Add("@Value", value);
             parameters.Add("@Ids", ids);
+            parameters.Add("@ModifiedBy", "Thái Minh Hiếu");
+            parameters.Add("@ModifiedDate", DateTime.UtcNow);
 
             return await conn.ExecuteAsync(sql, parameters);
         }
@@ -514,75 +558,121 @@ namespace MISA.QLSX.Infrastructure.Repositories
                 param.Add("@SearchStr", $"%{request.Search}%");
             }
 
-            //Filter
+            // Filter
             if (request.Filters != null && request.Filters.Any())
             {
                 foreach (var filter in request.Filters)
                 {
+                    if (!FieldMap.TryGetValue(filter.Field, out var map))
+                        continue;
+
+                    if (!map.Operators.Contains(filter.Operator))
+                        continue;
+
+                    object? value = filter.Value;
+
+                    if (
+                        value != null
+                        && filter.Operator != "active"
+                        && filter.Operator != "inactive"
+                        && filter.Operator != "isnull"
+                        && filter.Operator != "notnull"
+                    )
+                    {
+                        try
+                        {
+                            if (value is JsonElement json)
+                            {
+                                if (json.ValueKind == JsonValueKind.String)
+                                    value = json.GetString();
+                                else if (json.ValueKind == JsonValueKind.Number)
+                                    value = json.GetDecimal();
+                                else if (json.ValueKind == JsonValueKind.True)
+                                    value = true;
+                                else if (json.ValueKind == JsonValueKind.False)
+                                    value = false;
+                                else
+                                    value = null;
+                            }
+
+                            if (value != null)
+                                value = Convert.ChangeType(value, map.DataType);
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
+
                     string paramName = $"@p{index}";
                     index++;
 
                     switch (filter.Operator)
                     {
-                        // ===== NUMBER / DATE =====
                         case "eq":
-                            where += $" AND {filter.Field} = {paramName}";
-                            param.Add(paramName, filter.Value);
+                            where += $" AND {map.Column} = {paramName}";
+                            param.Add(paramName, value);
                             break;
 
                         case "lt":
-                            where += $" AND {filter.Field} < {paramName}";
-                            param.Add(paramName, filter.Value);
+                            where += $" AND {map.Column} < {paramName}";
+                            param.Add(paramName, value);
                             break;
 
                         case "lte":
-                            where += $" AND {filter.Field} <= {paramName}";
-                            param.Add(paramName, filter.Value);
+                            where += $" AND {map.Column} <= {paramName}";
+                            param.Add(paramName, value);
                             break;
 
                         case "gt":
-                            where += $" AND {filter.Field} > {paramName}";
-                            param.Add(paramName, filter.Value);
+                            where += $" AND {map.Column} > {paramName}";
+                            param.Add(paramName, value);
                             break;
 
                         case "gte":
-                            where += $" AND {filter.Field} >= {paramName}";
-                            param.Add(paramName, filter.Value);
+                            where += $" AND {map.Column} >= {paramName}";
+                            param.Add(paramName, value);
                             break;
 
-                        // ===== STRING =====
                         case "contains":
-                            where += $" AND {filter.Field} LIKE {paramName}";
-                            param.Add(paramName, $"%{filter.Value}%");
+                            where += $" AND {map.Column} LIKE {paramName}";
+                            param.Add(paramName, $"%{value}%");
                             break;
 
                         case "notcontains":
-                            where += $" AND {filter.Field} NOT LIKE {paramName}";
-                            param.Add(paramName, $"%{filter.Value}%");
+                            where +=
+                                $" AND ({map.Column} NOT LIKE {paramName} OR {map.Column} IS NULL)";
+                            param.Add(paramName, $"%{value}%");
                             break;
-
                         case "starts":
-                            where += $" AND {filter.Field} LIKE {paramName}";
-                            param.Add(paramName, $"{filter.Value}%");
+                            where += $" AND {map.Column} LIKE {paramName}";
+                            param.Add(paramName, $"{value}%");
                             break;
 
                         case "ends":
-                            where += $" AND {filter.Field} LIKE {paramName}";
-                            param.Add(paramName, $"%{filter.Value}");
+                            where += $" AND {map.Column} LIKE {paramName}";
+                            param.Add(paramName, $"%{value}");
                             break;
 
                         case "neq":
-                            where += $" AND {filter.Field} <> {paramName}";
-                            param.Add(paramName, filter.Value);
+                            where += $" AND {map.Column} <> {paramName}";
+                            param.Add(paramName, value);
                             break;
 
-                        // ===== STATUS =====
                         case "active":
-                            where += $" AND {filter.Field} = TRUE";
+                            where += $" AND {map.Column} = TRUE";
                             break;
 
                         case "inactive":
-                            where += $" AND {filter.Field} = FALSE";
+                            where += $" AND {map.Column} = FALSE";
+                            break;
+
+                        case "isnull":
+                            where += $" AND {map.Column} IS NULL";
+                            break;
+
+                        case "notnull":
+                            where += $" AND {map.Column} IS NOT NULL";
                             break;
                     }
                 }
@@ -595,8 +685,25 @@ namespace MISA.QLSX.Infrastructure.Repositories
             if (request.Sorts != null && request.Sorts.Any())
             {
                 var orderParts = request.Sorts.Select(s =>
-                    $"{ToSnakeCase(s.Field)} {(s.Direction.ToUpper() == "DESC" ? "DESC" : "ASC")}"
-                );
+                {
+                    var prop = typeof(T)
+                        .GetProperties()
+                        .FirstOrDefault(p =>
+                            p.Name.EndsWith(s.Field, StringComparison.OrdinalIgnoreCase)
+                        );
+
+                    if (prop == null)
+                        throw new Exception(
+                            $"Field '{s.Field}' không tồn tại trong entity {typeof(T).Name}"
+                        );
+
+                    var columnName =
+                        prop.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(prop.Name);
+
+                    var direction = s.Direction?.ToUpper() == "DESC" ? "DESC" : "ASC";
+
+                    return $"{columnName} {direction}";
+                });
 
                 orderClause = " ORDER BY " + string.Join(", ", orderParts);
             }

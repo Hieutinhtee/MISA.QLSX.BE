@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Dapper;
+using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Core.Interfaces.Repository;
 using MISA.QLSX.Infrastructure.Connection;
@@ -48,6 +49,87 @@ namespace MISA.QLSX.Infrastructure.Repositories
                 "production_shift_created_by",
             };
         }
+
+        protected override Dictionary<string, FieldMapItem> FieldMap =>
+            new()
+            {
+                ["shiftCode"] = new()
+                {
+                    Column = "production_shift_code",
+                    DataType = typeof(string),
+                    Operators = new() { "eq", "contains", "starts", "ends", "neq" },
+                },
+
+                ["shiftName"] = new()
+                {
+                    Column = "production_shift_name",
+                    DataType = typeof(string),
+                    Operators = new() { "eq", "contains", "starts", "ends", "neq" },
+                },
+
+                ["shiftBeginTime"] = new()
+                {
+                    Column = "production_shift_begin_time",
+                    DataType = typeof(TimeSpan),
+                    Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+
+                ["shiftEndTime"] = new()
+                {
+                    Column = "production_shift_end_time",
+                    DataType = typeof(TimeSpan),
+                    Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+
+                ["beginBreakTime"] = new()
+                {
+                    Column = "production_shift_begin_break_time",
+                    DataType = typeof(TimeSpan),
+                    Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+
+                ["endBreakTime"] = new()
+                {
+                    Column = "production_shift_end_break_time",
+                    DataType = typeof(TimeSpan),
+                    Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+
+                ["workingTime"] = new()
+                {
+                    Column = "production_shift_working_time",
+                    DataType = typeof(decimal),
+                    Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+
+                ["breakTime"] = new()
+                {
+                    Column = "production_shift_break_time",
+                    DataType = typeof(decimal),
+                    Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+
+                ["isActive"] = new()
+                {
+                    Column = "production_shift_is_active",
+                    DataType = typeof(bool),
+                    Operators = new() { "eq", "active", "inactive" },
+                },
+
+                ["createdDate"] = new()
+                {
+                    Column = "production_shift_created_date",
+                    DataType = typeof(DateTime),
+                    Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+
+                ["modifiedDate"] = new()
+                {
+                    Column = "production_shift_modified_date",
+                    DataType = typeof(DateTime),
+                    Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+            };
 
         #endregion Method
     }

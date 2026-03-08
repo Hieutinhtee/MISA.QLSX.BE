@@ -1,13 +1,17 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MISA.QLSX.Core.DTOs.Requests.ShiftDTO;
+using MISA.QLSX.Core.DTOs.Responses;
 using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Core.Exceptions;
 using MISA.QLSX.Core.Interfaces.Service;
 using MISA.QLSX.Core.Services;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MISA.QLSX.Api.Controllers
 {
-    public class ShiftsController : BaseController<Shift>
+    public class ShiftsController
+        : BaseController<Shift, ShiftCreateDTO, ShiftUpdateDto, ShiftDtoRes>
     {
         #region Declaration
 
@@ -69,6 +73,73 @@ namespace MISA.QLSX.Api.Controllers
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 "Shift.xlsx"
             );
+        }
+
+        public override Task<Shift> MapCreateDtoToEntity(ShiftCreateDTO dtoCreate)
+        {
+            var entity = new Shift
+            {
+                ProductionShiftId = Guid.NewGuid(),
+                ProductionShiftCode = dtoCreate.ShiftCode,
+                ProductionShiftName = dtoCreate.ShiftName,
+                ProductionShiftDescription = dtoCreate.ShiftDescription,
+                ProductionShiftBeginTime = dtoCreate.ShiftBeginTime,
+                ProductionShiftEndTime = dtoCreate.ShiftEndTime,
+                ProductionShiftBeginBreakTime = dtoCreate.BeginBreakTime,
+                ProductionShiftEndBreakTime = dtoCreate.EndBreakTime,
+                ProductionShiftIsActive = dtoCreate.IsActive ?? true,
+                ProductionShiftCreatedBy = dtoCreate.CreatedBy,
+                ProductionShiftModifiedBy = dtoCreate.ModifiedBy,
+            };
+
+            return Task.FromResult(entity);
+        }
+
+        public override Task<Shift> MapUpdateDtoToEntity(ShiftUpdateDto dtoUpdate)
+        {
+            var entity = new Shift
+            {
+                ProductionShiftId = dtoUpdate.ShiftId,
+                ProductionShiftCode = dtoUpdate.ShiftCode,
+                ProductionShiftName = dtoUpdate.ShiftName,
+                ProductionShiftDescription = dtoUpdate.ShiftDescription,
+                ProductionShiftBeginTime = dtoUpdate.ShiftBeginTime,
+                ProductionShiftEndTime = dtoUpdate.ShiftEndTime,
+                ProductionShiftBeginBreakTime = dtoUpdate.BeginBreakTime,
+                ProductionShiftEndBreakTime = dtoUpdate.EndBreakTime,
+                ProductionShiftIsActive = dtoUpdate.IsActive ?? true,
+                ProductionShiftModifiedBy = dtoUpdate.ModifiedBy,
+            };
+
+            return Task.FromResult(entity);
+        }
+
+        public override PagingResponse<ShiftDtoRes> MapPagingResponse(
+            PagingResponse<Shift> pagingResponse
+        )
+        {
+            var data = pagingResponse
+                .Data.Select(x => new ShiftDtoRes
+                {
+                    ShiftId = x.ProductionShiftId,
+                    ShiftCode = x.ProductionShiftCode,
+                    ShiftName = x.ProductionShiftName,
+                    ShiftDescription = x.ProductionShiftDescription,
+                    ShiftBeginTime = x.ProductionShiftBeginTime,
+                    ShiftEndTime = x.ProductionShiftEndTime,
+                    BeginBreakTime = x.ProductionShiftBeginBreakTime,
+                    EndBreakTime = x.ProductionShiftEndBreakTime,
+                    WorkingTime = x.ProductionShiftWorkingTime,
+                    BreakTime = x.ProductionShiftBreakTime,
+                    IsActive = x.ProductionShiftIsActive,
+                    CreatedBy = x.ProductionShiftCreatedBy,
+                    CreatedDate = x.ProductionShiftCreatedDate,
+                    ModifiedBy = x.ProductionShiftModifiedBy,
+                    ModifiedDate = x.ProductionShiftModifiedDate,
+                })
+                .ToList();
+
+            return new PagingResponse<ShiftDtoRes> { Data = data, Meta = pagingResponse.Meta };
         }
 
         #endregion Method
