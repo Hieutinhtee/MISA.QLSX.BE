@@ -57,14 +57,14 @@ namespace MISA.QLSX.Infrastructure.Repositories
                 {
                     Column = "production_shift_code",
                     DataType = typeof(string),
-                    Operators = new() { "eq", "contains", "starts", "ends", "neq" },
+                    Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
 
                 ["shiftName"] = new()
                 {
                     Column = "production_shift_name",
                     DataType = typeof(string),
-                    Operators = new() { "eq", "contains", "starts", "ends", "neq" },
+                    Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
 
                 ["shiftBeginTime"] = new()
@@ -128,6 +128,19 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     Column = "production_shift_modified_date",
                     DataType = typeof(DateTime),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
+                },
+                ["createdBy"] = new()
+                {
+                    Column = "production_shift_created_by",
+                    DataType = typeof(string),
+                    Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
+                },
+
+                ["modifiedBy"] = new()
+                {
+                    Column = "production_shift_modified_by",
+                    DataType = typeof(string),
+                    Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
             };
 

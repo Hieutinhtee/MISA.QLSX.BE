@@ -644,6 +644,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
                                 $" AND ({map.Column} NOT LIKE {paramName} OR {map.Column} IS NULL)";
                             param.Add(paramName, $"%{value}%");
                             break;
+
                         case "starts":
                             where += $" AND {map.Column} LIKE {paramName}";
                             param.Add(paramName, $"{value}%");
