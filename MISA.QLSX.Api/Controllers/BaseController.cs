@@ -15,7 +15,7 @@ namespace MISA.QLSX.Api.Controllers
     /// Created by TMHieu - 7/12/2025
     [Route("api/v1/[controller]")]
     [ApiController]
-    public abstract class BaseController<T, TDtoCreate, TDtoUpdate, ShiftDtoRes> : ControllerBase
+    public abstract class BaseController<T> : ControllerBase
         where T : class
     {
         #region Declaration
@@ -42,17 +42,6 @@ namespace MISA.QLSX.Api.Controllers
         #endregion Constructor
 
         #region Method
-
-        [NonAction]
-        public abstract Task<T> MapCreateDtoToEntity(TDtoCreate dtoCreate);
-
-        [NonAction]
-        public abstract Task<T> MapUpdateDtoToEntity(TDtoUpdate dtoUpdate);
-
-        [NonAction]
-        public abstract PagingResponse<ShiftDtoRes> MapPagingResponse(
-            PagingResponse<T> pagingResponse
-        );
 
         /// <summary>
         /// Lấy tất cả bản ghi của Entity T
@@ -94,9 +83,8 @@ namespace MISA.QLSX.Api.Controllers
         /// <returns>ID (Guid) của bản ghi vừa được tạo</returns>
         /// Created by TMHieu - 7/12/2025
         [HttpPost]
-        public virtual async Task<IActionResult> Create([FromBody] TDtoCreate dtoCreate)
+        public virtual async Task<IActionResult> Create([FromBody] T entity)
         {
-            var entity = await MapCreateDtoToEntity(dtoCreate);
             var id = await _service.CreateAsync(entity);
             return StatusCode(201, new { id, message = "Created successfully" }); // 201 Created
         }
@@ -109,11 +97,10 @@ namespace MISA.QLSX.Api.Controllers
         /// <returns>Số bản ghi đã được cập nhật</returns>
         /// Created by TMHieu - 7/12/2025
         [HttpPut("{id}")]
-        public virtual async Task<IActionResult> Update(Guid id, [FromBody] TDtoUpdate dtoUpdate)
+        public virtual async Task<IActionResult> Update(Guid id, [FromBody] T entity)
         {
             try
             {
-                var entity = await MapUpdateDtoToEntity(dtoUpdate);
                 var rows = await _service.UpdateAsync(id, entity);
                 return Ok(new { updated = rows, message = "Updated successfully" });
             }
@@ -159,10 +146,9 @@ namespace MISA.QLSX.Api.Controllers
         /// <returns>Đối tượng PagingResponse chứa danh sách dữ liệu và thông tin meta</returns>
         /// Created by TMHieu - 7/12/2025
         [HttpPost("paging")]
-        public async Task<PagingResponse<ShiftDtoRes>> GetPaging([FromBody] QueryRequest request)
+        public async Task<PagingResponse<T>> GetPaging([FromBody] QueryRequest request)
         {
-            var response = MapPagingResponse(await _service.QueryPagingAsync(request));
-            return response;
+            return await _service.QueryPagingAsync(request);
         }
 
         /// <summary>

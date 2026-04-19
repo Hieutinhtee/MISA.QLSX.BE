@@ -12,103 +12,98 @@ namespace MISA.QLSX.Core.Entities
     /// Đối tượng ca làm việc
     /// Created by: TMHieu 03/12/2025
     /// </summary>
-    [Table("production_shift")]
+    [Table("shift")]
     public class Shift
     {
         /// <summary>
         /// ID ca làm việc (UUID)
         /// </summary>
         [Key]
-        [Column("production_shift_id")]
-        public Guid? ProductionShiftId { get; set; }
+        [Column("shift_id")]
+        public Guid? ShiftId { get; set; }
 
         /// <summary>
         /// Mã ca làm việc
         /// </summary>
-        [MaxLength(20)]
-        [Column("production_shift_code")]
-        public string? ProductionShiftCode { get; set; }
+        [Column("shift_code")]
+        public string? ShiftCode { get; set; }
 
         /// <summary>
         /// Tên ca làm việc
         /// </summary>
-        [MaxLength(50)]
-        [Column("production_shift_name")]
-        public string? ProductionShiftName { get; set; }
+        [Column("shift_name")]
+        public string? ShiftName { get; set; }
 
         /// <summary>
         /// Tên ca làm việc
         /// </summary>
-        [MaxLength(255)]
-        [Column("production_shift_description")]
-        public string? ProductionShiftDescription { get; set; }
+        [Column("description")]
+        public string? Description { get; set; }
 
         /// <summary>
         /// Thời gian bắt đầu ca
         /// </summary>
-        [Column("production_shift_begin_time")]
-        public TimeSpan? ProductionShiftBeginTime { get; set; }
+        [Column("start_time")]
+        public TimeSpan? StartTime { get; set; }
 
         /// <summary>
         /// Thời gian bắt đầu nghỉ giữa ca
         /// </summary>
-        [Column("production_shift_begin_break_time")]
-        public TimeSpan? ProductionShiftBeginBreakTime { get; set; }
+        [Column("break_start_time")]
+        public TimeSpan? BreakStartTime { get; set; }
 
         /// <summary>
         /// Thời gian kết thúc ca
         /// </summary>
-        [Column("production_shift_end_time")]
-        public TimeSpan? ProductionShiftEndTime { get; set; }
+        [Column("end_time")]
+        public TimeSpan? EndTime { get; set; }
 
         /// <summary>
         /// Thời gian kết thúc nghỉ giữa ca
         /// </summary>
-        [Column("production_shift_end_break_time")]
-        public TimeSpan? ProductionShiftEndBreakTime { get; set; }
+        [Column("break_end_time")]
+        public TimeSpan? BreakEndTime { get; set; }
 
         /// <summary>
         /// Tổng thời gian làm việc (giờ)
         /// </summary>
-        [Column("production_shift_working_time", TypeName = "decimal(18,2)")]
-        public decimal? ProductionShiftWorkingTime { get; set; }
+        [Column("working_hours")]
+        public decimal? WorkingHours { get; set; }
 
         /// <summary>
         /// Tổng thời gian nghỉ (giờ)
         /// </summary>
-        [Column("production_shift_break_time", TypeName = "decimal(18,2)")]
-        public decimal? ProductionShiftBreakTime { get; set; }
+        [Column("break_hours")]
+        public decimal? BreakHours { get; set; }
 
         /// <summary>
         /// Trạng thái hoạt động (1 - Đang hoạt động, 0 - Ngừng hoạt động)
         /// </summary>
-        [Column("production_shift_is_active")]
-        public bool? ProductionShiftIsActive { get; set; }
+        [Column("is_active")]
+        public bool? IsActive { get; set; }
 
         /// <summary>
         /// Người tạo
         /// </summary>
-        [MaxLength(255)]
-        [Column("production_shift_created_by")]
-        public string? ProductionShiftCreatedBy { get; set; }
+        [Column("created_by")]
+        public Guid? CreatedBy { get; set; }
 
         /// <summary>
         /// Ngày tạo
         /// </summary>
-        [Column("production_shift_created_date")]
-        public DateTime? ProductionShiftCreatedDate { get; set; }
+        [Column("created_at")]
+        public DateTime? CreatedAt { get; set; }
 
         /// <summary>
         /// Người sửa
         /// </summary>
-        [MaxLength(255)]
-        [Column("production_shift_modified_by")]
-        public string? ProductionShiftModifiedBy { get; set; }
+        [Column("updated_by")]
+        public Guid? UpdatedBy { get; set; }
 
         /// <summary>
         /// Ngày sửa
         /// </summary>
-        [Column("production_shift_modified_date")]
-        public DateTime? ProductionShiftModifiedDate { get; set; }
+        [Column("updated_at")]
+        public DateTime? UpdatedAt { get; set; }
     }
 }

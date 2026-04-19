@@ -60,7 +60,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             var tableAttr = type.GetCustomAttribute<TableAttribute>();
             _tableName = tableAttr?.Name ?? ToSnakeCase(type.Name);
 
-            _defaultSortFiled = _tableName + "_modified_date";
+            _defaultSortFiled = ResolveDefaultSortField(type, _tableName);
 
             //  Lấy property Key
             var keyProp = type.GetProperties()
@@ -78,6 +78,30 @@ namespace MISA.QLSX.Infrastructure.Repositories
             // Nếu không có → dùng tên property
             _idColumn = colAttr?.Name ?? ToSnakeCase(keyProp.Name);
         }
+
+        private static string ResolveDefaultSortField(Type type, string tableName)
+        {
+            var props = type.GetProperties();
+
+            bool hasUpdatedAt = props.Any(p =>
+                string.Equals(
+                    p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name),
+                    "updated_at",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            );
+
+            if (hasUpdatedAt)
+                return "updated_at";
+
+            return tableName + "_modified_date";
+        }
+
+        /// <summary>
+        /// Nguồn dữ liệu dùng cho các truy vấn đọc.
+        /// Mặc định là bảng chính, repository con có thể override để đọc từ VIEW.
+        /// </summary>
+        protected virtual string GetReadTableName() => _tableName;
 
         /// <summary>
         /// Phương thức helper để chuyển tên class sang snake_case (ví dụ: Customer → customer).
@@ -140,7 +164,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             // Sử dụng using để tự động đóng connection sau khi dùng xong
             using var conn = Connection;
             // SQL chỉ lấy các record chưa xóa (is_deleted = 0)
-            var sql = $"SELECT * FROM {_tableName} ORDER BY {_defaultSortFiled} DESC";
+            var sql = $"SELECT * FROM {GetReadTableName()} ORDER BY {_defaultSortFiled} DESC";
             var res = await conn.QueryAsync<T>(sql);
             return res.ToList();
         }
@@ -156,17 +180,16 @@ namespace MISA.QLSX.Infrastructure.Repositories
         {
             using var conn = Connection;
 
-            // Lấy danh sách property có attribute [ColumnName] để mapping
+            // Lấy danh sách property để mapping
             var properties = typeof(T)
                 .GetProperties()
-                .Where(p => p.GetCustomAttribute<ColumnAttribute>() != null)
+                .Where(p => p.CanRead && p.CanWrite && p.GetCustomAttribute<NotMappedAttribute>() == null)
                 .ToList();
 
-            // Tạo chuỗi columns từ attribute Name
-            // Dấu ! để báo với compiler giá trị này chắc chắn không null
+            // Tạo chuỗi columns từ attribute Name hoặc tên property (snake_case)
             var columns = string.Join(
                 ", ",
-                properties.Select(p => p.GetCustomAttribute<ColumnAttribute>()!.Name)
+                properties.Select(p => p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name))
             );
 
             // Tạo chuỗi param names (@PropertyName)
@@ -216,13 +239,15 @@ namespace MISA.QLSX.Infrastructure.Repositories
                 .GetProperties()
                 .Where(p =>
                 {
-                    var col = p.GetCustomAttribute<ColumnAttribute>();
-                    if (col == null || p == keyProp)
+                    if (p.GetCustomAttribute<NotMappedAttribute>() != null)
                         return false;
 
-                    var name = p.Name;
+                    if (p == keyProp)
+                        return false;
 
-                    return !name.EndsWith("CreatedBy") && !name.EndsWith("CreatedDate");
+                    var columnName = p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name);
+
+                    return columnName != "created_by" && columnName != "created_at";
                 })
                 .ToList();
 
@@ -230,7 +255,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             var setClause = string.Join(
                 ", ",
                 properties.Select(p =>
-                    $"{p.GetCustomAttribute<ColumnAttribute>()!.Name} = @{p.Name}"
+                    $"{p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name)} = @{p.Name}"
                 )
             );
 
@@ -271,8 +296,12 @@ namespace MISA.QLSX.Infrastructure.Repositories
             var prop = typeof(T)
                 .GetProperties()
                 .FirstOrDefault(p =>
-                    p.GetCustomAttribute<ColumnAttribute>()
-                        ?.Name.Equals(columnName, StringComparison.OrdinalIgnoreCase) == true
+                    string.Equals(
+                        p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name),
+                        columnName,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                    || string.Equals(p.Name, columnName, StringComparison.OrdinalIgnoreCase)
                 );
 
             if (prop == null)
@@ -287,15 +316,37 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
             var modifiedByProp = typeof(T)
                 .GetProperties()
-                .FirstOrDefault(p => p.Name.EndsWith("ModifiedBy"));
+                .FirstOrDefault(p =>
+                    string.Equals(
+                        p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name),
+                        "updated_by",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                    || p.Name.EndsWith("ModifiedBy")
+                );
 
             var modifiedDateProp = typeof(T)
                 .GetProperties()
-                .FirstOrDefault(p => p.Name.EndsWith("ModifiedDate"));
+                .FirstOrDefault(p =>
+                    string.Equals(
+                        p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name),
+                        "updated_at",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                    || p.Name.EndsWith("ModifiedDate")
+                );
 
-            var modifiedByColumn = modifiedByProp?.GetCustomAttribute<ColumnAttribute>()?.Name;
+            var modifiedByColumn =
+                modifiedByProp == null
+                    ? null
+                    : modifiedByProp.GetCustomAttribute<ColumnAttribute>()?.Name
+                        ?? ToSnakeCase(modifiedByProp.Name);
 
-            var modifiedDateColumn = modifiedDateProp?.GetCustomAttribute<ColumnAttribute>()?.Name;
+            var modifiedDateColumn =
+                modifiedDateProp == null
+                    ? null
+                    : modifiedDateProp.GetCustomAttribute<ColumnAttribute>()?.Name
+                        ?? ToSnakeCase(modifiedDateProp.Name);
 
             var setParts = new List<string> { $"{dbColumnName} = @Value" };
 
@@ -316,7 +367,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             var parameters = new DynamicParameters();
             parameters.Add("@Value", value);
             parameters.Add("@Ids", ids);
-            parameters.Add("@ModifiedBy", "Thái Minh Hiếu");
+            parameters.Add("@ModifiedBy", "b8373a59-3be2-11f1-97ac-d0c5d346d1a4");
             parameters.Add("@ModifiedDate", DateTime.UtcNow);
 
             return await conn.ExecuteAsync(sql, parameters);
@@ -715,11 +766,11 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
             // ===== COUNT =====
 
-            string sqlCount = $"SELECT COUNT(*) FROM {_tableName} {where}";
+            string sqlCount = $"SELECT COUNT(*) FROM {GetReadTableName()} {where}";
 
             // ===== BASE SQL =====
 
-            string baseSql = $"SELECT * FROM {_tableName} {where} {orderClause}";
+            string baseSql = $"SELECT * FROM {GetReadTableName()} {where} {orderClause}";
 
             // ===== PAGING =====
 
@@ -807,7 +858,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             // 5. SQL
             var sql =
                 $@" SELECT *
-                    FROM {_tableName}
+                    FROM {GetReadTableName()}
                     {where};";
 
             // 6. Params

@@ -60,16 +60,16 @@ namespace MISA.QLSX.Core.Services
 
             foreach (var s in shifts)
             {
-                ws.Cells[row, 1].Value = s.ProductionShiftCode;
-                ws.Cells[row, 2].Value = s.ProductionShiftName;
-                ws.Cells[row, 3].Value = s.ProductionShiftBeginTime?.ToString(@"hh\:mm");
-                ws.Cells[row, 4].Value = s.ProductionShiftEndTime?.ToString(@"hh\:mm");
-                ws.Cells[row, 5].Value = s.ProductionShiftBeginBreakTime?.ToString(@"hh\:mm");
-                ws.Cells[row, 6].Value = s.ProductionShiftEndBreakTime?.ToString(@"hh\:mm");
-                ws.Cells[row, 7].Value = s.ProductionShiftWorkingTime;
-                ws.Cells[row, 8].Value = s.ProductionShiftBreakTime;
+                ws.Cells[row, 1].Value = s.ShiftCode;
+                ws.Cells[row, 2].Value = s.ShiftName;
+                ws.Cells[row, 3].Value = s.StartTime?.ToString(@"hh\:mm");
+                ws.Cells[row, 4].Value = s.EndTime?.ToString(@"hh\:mm");
+                ws.Cells[row, 5].Value = s.BreakStartTime?.ToString(@"hh\:mm");
+                ws.Cells[row, 6].Value = s.BreakEndTime?.ToString(@"hh\:mm");
+                ws.Cells[row, 7].Value = s.WorkingHours;
+                ws.Cells[row, 8].Value = s.BreakHours;
                 ws.Cells[row, 9].Value =
-                    s.ProductionShiftIsActive == true ? "Đang sử dụng" : "Ngừng sử dụng";
+                    s.IsActive == true ? "Đang sử dụng" : "Ngừng sử dụng";
 
                 row++;
             }
@@ -103,27 +103,27 @@ namespace MISA.QLSX.Core.Services
         /// <param name="shift">thực thể ca làm việc</param>
         private void CalculateWorkingAndBreakTime(Shift shift)
         {
-            var begin = shift.ProductionShiftBeginTime!.Value;
-            var end = shift.ProductionShiftEndTime!.Value;
+            var begin = shift.StartTime!.Value;
+            var end = shift.EndTime!.Value;
 
             var shiftDuration = CalculateDuration(begin, end);
 
             TimeSpan breakDuration = TimeSpan.Zero;
 
             if (
-                shift.ProductionShiftBeginBreakTime != null
-                && shift.ProductionShiftEndBreakTime != null
+                shift.BreakStartTime != null
+                && shift.BreakEndTime != null
             )
             {
                 breakDuration = CalculateDuration(
-                    shift.ProductionShiftBeginBreakTime.Value,
-                    shift.ProductionShiftEndBreakTime.Value
+                    shift.BreakStartTime.Value,
+                    shift.BreakEndTime.Value
                 );
             }
 
-            shift.ProductionShiftBreakTime = (decimal)breakDuration.TotalHours;
+            shift.BreakHours = (decimal)breakDuration.TotalHours;
 
-            shift.ProductionShiftWorkingTime = (decimal)(shiftDuration - breakDuration).TotalHours;
+            shift.WorkingHours = (decimal)(shiftDuration - breakDuration).TotalHours;
         }
 
         /// <summary>
@@ -138,8 +138,8 @@ namespace MISA.QLSX.Core.Services
         {
             CalculateWorkingAndBreakTime(shift);
             if (!isUpdate)
-                shift.ProductionShiftCreatedDate = DateTime.Now;
-            shift.ProductionShiftModifiedDate = DateTime.Now;
+                shift.CreatedAt = DateTime.Now;
+            shift.UpdatedAt = DateTime.Now;
 
             return Task.CompletedTask;
         }
@@ -162,36 +162,36 @@ namespace MISA.QLSX.Core.Services
 
             // 1. Mã ca - bắt buộc
 
-            if (string.IsNullOrWhiteSpace(shift.ProductionShiftCode))
+            if (string.IsNullOrWhiteSpace(shift.ShiftCode))
                 throw new ValidateException("ShiftCode required", "Mã ca không được để trống");
 
-            if (shift.ProductionShiftCode.Length > 20)
+            if (shift.ShiftCode.Length > 20)
                 throw new ValidateException("ShiftCode max length", "Mã ca tối đa 20 ký tự");
 
             // 2. Tên ca - bắt buộc
 
-            if (string.IsNullOrWhiteSpace(shift.ProductionShiftName))
+            if (string.IsNullOrWhiteSpace(shift.ShiftName))
                 throw new ValidateException("ShiftName required", "Tên ca không được để trống");
 
-            if (shift.ProductionShiftName.Length > 50)
-                throw new ValidateException("ShiftName max length", "Tên ca tối đa 50 ký tự");
+            if (shift.ShiftName.Length > 100)
+                throw new ValidateException("ShiftName max length", "Tên ca tối đa 100 ký tự");
 
             // 3. Giờ vào ca - bắt buộc
 
-            if (shift.ProductionShiftBeginTime == null)
+            if (shift.StartTime == null)
                 throw new ValidateException("BeginTime required", "Giờ vào ca không được để trống");
 
             // 4. Giờ hết ca - bắt buộc
 
-            if (shift.ProductionShiftEndTime == null)
+            if (shift.EndTime == null)
                 throw new ValidateException("EndTime required", "Giờ hết ca không được để trống");
 
             // 5. Kiểm tra mã ca trùng (trừ chính bản ghi đang sửa)
 
             if (
                 await _shiftRepo.IsValueExistAsync(
-                    nameof(Shift.ProductionShiftCode),
-                    shift.ProductionShiftCode,
+                    nameof(Shift.ShiftCode),
+                    shift.ShiftCode,
                     ignoreId
                 )
             )
@@ -201,8 +201,8 @@ namespace MISA.QLSX.Core.Services
 
             // ===== VALIDATE THỜI GIAN =====
 
-            var begin = shift.ProductionShiftBeginTime!.Value;
-            var end = shift.ProductionShiftEndTime!.Value;
+            var begin = shift.StartTime!.Value;
+            var end = shift.EndTime!.Value;
 
             // Không cho 2 mốc ca trùng nhau
             if (begin == end)
@@ -226,8 +226,8 @@ namespace MISA.QLSX.Core.Services
 
             // ===== VALIDATE NGHỈ =====
 
-            var breakBegin = shift.ProductionShiftBeginBreakTime;
-            var breakEnd = shift.ProductionShiftEndBreakTime;
+            var breakBegin = shift.BreakStartTime;
+            var breakEnd = shift.BreakEndTime;
 
             // Nếu có khai báo nghỉ thì phải đủ cặp
             if (breakBegin != null && breakEnd == null)
@@ -286,7 +286,7 @@ namespace MISA.QLSX.Core.Services
 
         public Task<int> UpdateIsActiveMany(List<Guid> ids, bool isActive)
         {
-            var columnName = "production_shift_is_active";
+            var columnName = "is_active";
             return _repo.BulkUpdateSameValueAsync(ids, columnName, isActive);
         }
 

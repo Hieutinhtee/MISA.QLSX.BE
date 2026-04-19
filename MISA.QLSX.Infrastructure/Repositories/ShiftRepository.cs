@@ -43,10 +43,10 @@ namespace MISA.QLSX.Infrastructure.Repositories
         {
             return new HashSet<string>
             {
-                "production_shift_code",
-                "production_shift_name",
-                "production_shift_modified_by",
-                "production_shift_created_by",
+                "shift_code",
+                "shift_name",
+                "updated_by",
+                "created_by",
             };
         }
 
@@ -55,90 +55,90 @@ namespace MISA.QLSX.Infrastructure.Repositories
             {
                 ["shiftCode"] = new()
                 {
-                    Column = "production_shift_code",
+                    Column = "shift_code",
                     DataType = typeof(string),
                     Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
 
                 ["shiftName"] = new()
                 {
-                    Column = "production_shift_name",
+                    Column = "shift_name",
                     DataType = typeof(string),
                     Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
 
-                ["shiftBeginTime"] = new()
+                ["startTime"] = new()
                 {
-                    Column = "production_shift_begin_time",
+                    Column = "start_time",
                     DataType = typeof(TimeSpan),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
 
-                ["shiftEndTime"] = new()
+                ["endTime"] = new()
                 {
-                    Column = "production_shift_end_time",
+                    Column = "end_time",
                     DataType = typeof(TimeSpan),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
 
-                ["beginBreakTime"] = new()
+                ["breakStartTime"] = new()
                 {
-                    Column = "production_shift_begin_break_time",
+                    Column = "break_start_time",
                     DataType = typeof(TimeSpan),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
 
-                ["endBreakTime"] = new()
+                ["breakEndTime"] = new()
                 {
-                    Column = "production_shift_end_break_time",
+                    Column = "break_end_time",
                     DataType = typeof(TimeSpan),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
 
-                ["workingTime"] = new()
+                ["workingHours"] = new()
                 {
-                    Column = "production_shift_working_time",
+                    Column = "working_hours",
                     DataType = typeof(decimal),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
 
-                ["breakTime"] = new()
+                ["breakHours"] = new()
                 {
-                    Column = "production_shift_break_time",
+                    Column = "break_hours",
                     DataType = typeof(decimal),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
 
                 ["isActive"] = new()
                 {
-                    Column = "production_shift_is_active",
+                    Column = "is_active",
                     DataType = typeof(bool),
                     Operators = new() { "eq", "active", "inactive" },
                 },
 
-                ["createdDate"] = new()
+                ["createdAt"] = new()
                 {
-                    Column = "production_shift_created_date",
+                    Column = "created_at",
                     DataType = typeof(DateTime),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
 
-                ["modifiedDate"] = new()
+                ["updatedAt"] = new()
                 {
-                    Column = "production_shift_modified_date",
+                    Column = "updated_at",
                     DataType = typeof(DateTime),
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
                 ["createdBy"] = new()
                 {
-                    Column = "production_shift_created_by",
+                    Column = "created_by",
                     DataType = typeof(string),
                     Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
 
-                ["modifiedBy"] = new()
+                ["updatedBy"] = new()
                 {
-                    Column = "production_shift_modified_by",
+                    Column = "updated_by",
                     DataType = typeof(string),
                     Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
