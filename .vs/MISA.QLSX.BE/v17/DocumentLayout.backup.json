@@ -52,7 +52,7 @@
               "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
               "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
               "RelativeToolTip": "MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
-              "ViewState": "AgIAAHEAAAAAAAAAAAAcwHkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAswIQAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-19T14:05:41.987Z",
               "EditorCaption": ""
@@ -65,7 +65,7 @@
               "RelativeDocumentMoniker": "MISA.QLSX.Core\\Entities\\Employee.cs",
               "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Entities\\Employee.cs",
               "RelativeToolTip": "MISA.QLSX.Core\\Entities\\Employee.cs",
-              "ViewState": "AgIAAEMAAAAAAAAAAAAQwFkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAACUAAAAAAAAAAAAIwC8AAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-19T12:21:56.43Z",
               "EditorCaption": ""
@@ -104,7 +104,7 @@
               "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
               "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
               "RelativeToolTip": "MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
-              "ViewState": "AgIAAPUCAAAAAAAAAAAzwBIDAAAMAAAAAAAAAA==",
+              "ViewState": "AgIAAA8DAAAAAAAAAAAowAQDAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-19T10:42:35.785Z",
               "EditorCaption": ""
@@ -147,20 +147,6 @@
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-19T10:41:44.375Z",
               "EditorCaption": ""
-            }
-          ]
-        },
-        {
-          "DockedHeight": 71,
-          "SelectedChildIndex": -1,
-          "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{4a18f9d0-b838-11d0-93eb-00a0c90f2734}"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{be4d7042-ba3f-11d2-840e-00c04f9902c1}"
             }
           ]
         }

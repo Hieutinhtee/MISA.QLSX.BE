@@ -1,0 +1,60 @@
+using MISA.QLSX.Core.DTOs.Requests;
+using MISA.QLSX.Core.Entities;
+using MISA.QLSX.Core.Interfaces.Repository;
+using MISA.QLSX.Infrastructure.Connection;
+
+namespace MISA.QLSX.Infrastructure.Repositories
+{
+    public class ContractRepository : BaseRepository<Contract>, IContractRepository
+    {
+        private const string ReadViewName = "vw_contract_detail";
+
+        public ContractRepository(MySqlConnectionFactory factory)
+            : base(factory) { }
+
+        protected override string GetReadTableName() => ReadViewName;
+
+        protected override HashSet<string> GetSearchFields()
+        {
+            return new HashSet<string>
+            {
+                "contract_code",
+                "template_code",
+                "template_name",
+                "contract_type",
+                "company_representative_name",
+                "company_signer_title",
+                "employee_code",
+                "employee_name",
+                "summary",
+            };
+        }
+
+        protected override Dictionary<string, FieldMapItem> FieldMap =>
+            new()
+            {
+                ["contractCode"] = new() { Column = "contract_code", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["templateId"] = new() { Column = "template_id", DataType = typeof(Guid), Operators = new() { "eq", "neq", "isnull", "notnull" } },
+                ["templateCode"] = new() { Column = "template_code", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["templateName"] = new() { Column = "template_name", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["contractType"] = new() { Column = "contract_type", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["companyRepresentativeId"] = new() { Column = "company_representative_id", DataType = typeof(Guid), Operators = new() { "eq", "neq", "isnull", "notnull" } },
+                ["companyRepresentativeName"] = new() { Column = "company_representative_name", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["companySignerTitle"] = new() { Column = "company_signer_title", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["employeeId"] = new() { Column = "employee_id", DataType = typeof(Guid), Operators = new() { "eq", "neq", "isnull", "notnull" } },
+                ["employeeCode"] = new() { Column = "employee_code", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["employeeName"] = new() { Column = "employee_name", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["effectiveDate"] = new() { Column = "effective_date", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte" } },
+                ["termMonths"] = new() { Column = "term_months", DataType = typeof(int), Operators = new() { "eq", "lt", "lte", "gt", "gte", "neq", "isnull", "notnull" } },
+                ["baseSalary"] = new() { Column = "base_salary", DataType = typeof(decimal), Operators = new() { "eq", "lt", "lte", "gt", "gte" } },
+                ["insuranceSalary"] = new() { Column = "insurance_salary", DataType = typeof(decimal), Operators = new() { "eq", "lt", "lte", "gt", "gte" } },
+                ["salaryRatio"] = new() { Column = "salary_ratio", DataType = typeof(decimal), Operators = new() { "eq", "lt", "lte", "gt", "gte" } },
+                ["summary"] = new() { Column = "summary", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["attachmentLink"] = new() { Column = "attachment_link", DataType = typeof(string), Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" } },
+                ["isSigned"] = new() { Column = "is_signed", DataType = typeof(bool), Operators = new() { "eq", "active", "inactive" } },
+                ["signedAt"] = new() { Column = "signed_at", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte", "isnull", "notnull" } },
+                ["createdAt"] = new() { Column = "created_at", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte" } },
+                ["updatedAt"] = new() { Column = "updated_at", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte" } },
+            };
+    }
+}

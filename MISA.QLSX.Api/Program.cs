@@ -23,10 +23,14 @@ builder.Services.AddSingleton<MySqlConnectionFactory>(new MySqlConnectionFactory
 // Đăng ký Repository
 builder.Services.AddScoped<IShiftRepository, ShiftRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IContractTemplateRepository, ContractTemplateRepository>();
+builder.Services.AddScoped<IContractRepository, ContractRepository>();
 
 // Đăng ký Service
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IContractTemplateService, ContractTemplateService>();
+builder.Services.AddScoped<IContractService, ContractService>();
 
 //Cho phép gọi api không cần ktra
 builder.Services.AddCors(options =>
