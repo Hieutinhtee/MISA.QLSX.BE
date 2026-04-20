@@ -94,7 +94,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             if (hasUpdatedAt)
                 return "updated_at";
 
-            return tableName + "_modified_date";
+            return "modified_date";
         }
 
         /// <summary>
@@ -183,13 +183,17 @@ namespace MISA.QLSX.Infrastructure.Repositories
             // Lấy danh sách property để mapping
             var properties = typeof(T)
                 .GetProperties()
-                .Where(p => p.CanRead && p.CanWrite && p.GetCustomAttribute<NotMappedAttribute>() == null)
+                .Where(p =>
+                    p.CanRead && p.CanWrite && p.GetCustomAttribute<NotMappedAttribute>() == null
+                )
                 .ToList();
 
             // Tạo chuỗi columns từ attribute Name hoặc tên property (snake_case)
             var columns = string.Join(
                 ", ",
-                properties.Select(p => p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name))
+                properties.Select(p =>
+                    p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name)
+                )
             );
 
             // Tạo chuỗi param names (@PropertyName)
@@ -245,7 +249,8 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     if (p == keyProp)
                         return false;
 
-                    var columnName = p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name);
+                    var columnName =
+                        p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name);
 
                     return columnName != "created_by" && columnName != "created_at";
                 })
@@ -300,8 +305,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
                         p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name),
                         columnName,
                         StringComparison.OrdinalIgnoreCase
-                    )
-                    || string.Equals(p.Name, columnName, StringComparison.OrdinalIgnoreCase)
+                    ) || string.Equals(p.Name, columnName, StringComparison.OrdinalIgnoreCase)
                 );
 
             if (prop == null)
@@ -321,8 +325,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
                         p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name),
                         "updated_by",
                         StringComparison.OrdinalIgnoreCase
-                    )
-                    || p.Name.EndsWith("ModifiedBy")
+                    ) || p.Name.EndsWith("ModifiedBy")
                 );
 
             var modifiedDateProp = typeof(T)
@@ -332,8 +335,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
                         p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name),
                         "updated_at",
                         StringComparison.OrdinalIgnoreCase
-                    )
-                    || p.Name.EndsWith("ModifiedDate")
+                    ) || p.Name.EndsWith("ModifiedDate")
                 );
 
             var modifiedByColumn =

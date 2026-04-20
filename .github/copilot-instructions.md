@@ -1,11 +1,16 @@
 # Copilot Instructions for MISA.QLSX
 
+## Read first
+
+- FE instruction reference: [../../MISA.QLSX.FE/.github/copilot-instructions.md](../../MISA.QLSX.FE/.github/copilot-instructions.md)
+- FE Copilot playbook/templates: [../../MISA.QLSX.FE/docs/copilot/README.md](../../MISA.QLSX.FE/docs/copilot/README.md)
+
 ## Big picture
 
 - Workspace has a Vue 3 FE in `MISA.QLSX.FE/` and a .NET 8 BE in `MISA.QLSX.BE/`.
 - FE is feature-based: pages in `src/views/*`, shared UI in `src/components/*`, shared paging/search flow in `src/composables/usePagingTable.js`.
 - BE follows 3 layers: `MISA.QLSX.Api` (controllers), `MISA.QLSX.Core` (entities/services/contracts), `MISA.QLSX.Infrastructure` (Dapper/MySQL repositories).
-- Generic base classes are the main extension points: `BaseController<T>`, `BaseServices<T>`, and `BaseRepository<T>`.
+- Generic base classes are the main extension points: `BaseController<T>`, `BaseService<T>`, and `BaseRepository<T>`.
 
 ## FE conventions
 
@@ -24,6 +29,7 @@
 - Keep `FieldMap` and `GetSearchFields()` whitelists in sync with supported filter/search fields; never build SQL from arbitrary request keys.
 - `Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true` is enabled in `Program.cs`, so snake_case DB columns map to PascalCase C# properties.
 - `ValidateExceptionMiddleware` turns domain validation errors into API responses; business rules belong in services, not controllers.
+- Default repository behavior uses soft delete (`is_active`) and parameterized SQL.
 
 ## Data/model patterns
 
@@ -36,15 +42,16 @@
 
 - FE: `npm install`, `npm run dev`, `npm run build`, `npm run lint`, `npm run format`.
 - BE: `dotnet build MISA.QLSX.BE.sln`, `dotnet run --project MISA.QLSX.Api/MISA.QLSX.Api.csproj`.
-- MCP MySQL server: `cd docs/mcp && npm install && npm start` (for direct DB access, schema inspection, migrations).
+- MCP MySQL server: `cd ../docs/mcp && npm install && npm start` (for direct DB access, schema inspection, migrations).
 - When changing UI, validate layout and comments in the same pass; prefer small, targeted edits over broad reformatting.
+- No test project is currently present in this repository; validate behavior with focused manual checks.
 
 ## Integration points
 
 - `Program.cs` wires CORS, DI, Swagger, Dapper underscore mapping, exception middleware, and EPPlus license setup.
 - `BaseAPI` wraps Axios and expects controllers to follow the base route conventions.
 - `MsTable.vue` is used broadly across feature pages, so keep its props, emitted events, and persisted column settings backward compatible.
-- **MCP MySQL Server** (`docs/mcp/index.js`) provides AI agents with direct DB access for queries, schema inspection, and migrations — connection reads from `MISA.QLSX.Api/appsettings.json` or `docs/mcp/.env`.
+- **MCP MySQL Server** (`../docs/mcp/index.js`) provides AI agents with direct DB access for queries, schema inspection, and migrations — connection reads from `MISA.QLSX.Api/appsettings.json` or `../docs/mcp/.env`.
 
 ## Guidance for AI agents
 
@@ -52,3 +59,4 @@
 - Preserve existing naming and comment style; add comments only where UI or logic is non-obvious.
 - For database operations (schema inspection, migrations, data verification), use the MCP MySQL server tools instead of calling the API directly.
 - Prefer the smallest fix that matches the current architecture.
+- If you add new filter/search fields, update repository `FieldMap` and `GetSearchFields()` together.

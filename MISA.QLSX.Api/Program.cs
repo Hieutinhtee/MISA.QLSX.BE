@@ -25,12 +25,20 @@ builder.Services.AddScoped<IShiftRepository, ShiftRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IContractTemplateRepository, ContractTemplateRepository>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
+builder.Services.AddScoped<ISalaryPolicyRepository, SalaryPolicyRepository>();
+builder.Services.AddScoped<ITaxBracketRepository, TaxBracketRepository>();
+builder.Services.AddScoped<IDeductionPolicyRepository, DeductionPolicyRepository>();
+builder.Services.AddScoped<IEmployeeTaxProfileRepository, EmployeeTaxProfileRepository>();
 
 // Đăng ký Service
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IContractTemplateService, ContractTemplateService>();
 builder.Services.AddScoped<IContractService, ContractService>();
+builder.Services.AddScoped<ISalaryPolicyService, SalaryPolicyService>();
+builder.Services.AddScoped<ITaxBracketService, TaxBracketService>();
+builder.Services.AddScoped<IDeductionPolicyService, DeductionPolicyService>();
+builder.Services.AddScoped<IEmployeeTaxProfileService, EmployeeTaxProfileService>();
 
 //Cho phép gọi api không cần ktra
 builder.Services.AddCors(options =>

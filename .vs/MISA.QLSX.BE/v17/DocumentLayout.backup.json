@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.infrastructure\\repositories\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|solutionrelative:misa.qlsx.infrastructure\\repositories\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\entities\\employee.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\entities\\employee.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.infrastructure\\repositories\\employeerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|solutionrelative:misa.qlsx.infrastructure\\repositories\\employeerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.infrastructure\\repositories\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|solutionrelative:misa.qlsx.infrastructure\\repositories\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\entities\\shift.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -42,11 +42,11 @@
       "DocumentGroups": [
         {
           "DockedHeight": 249,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "EmployeeRepository.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
@@ -54,12 +54,11 @@
               "RelativeToolTip": "MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
               "ViewState": "AgIAAA8AAAAAAAAAAAAswIQAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T14:05:41.987Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-19T14:05:41.987Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Employee.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Entities\\Employee.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Core\\Entities\\Employee.cs",
@@ -80,8 +79,7 @@
               "RelativeToolTip": "MISA.QLSX.Core\\Services\\ShiftService.cs",
               "ViewState": "AgIAAHoAAAAAAAAAAIAwwI0AAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T11:41:28.014Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-19T11:41:28.014Z"
             },
             {
               "$type": "Document",
@@ -93,18 +91,17 @@
               "RelativeToolTip": "MISA.QLSX.Core\\Services\\BaseService.cs",
               "ViewState": "AgIAAE8AAAAAAAAAAAAMwF0AAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T10:42:35.769Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-19T10:42:35.769Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "BaseRepository.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
               "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
               "RelativeToolTip": "MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
-              "ViewState": "AgIAAA8DAAAAAAAAAAAowAQDAAAMAAAAAAAAAA==",
+              "ViewState": "AgIAAEsAAAAAAAAAAAAmwGoAAABgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-19T10:42:35.785Z",
               "EditorCaption": ""
@@ -119,8 +116,7 @@
               "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\BaseController.cs",
               "ViewState": "AgIAAFkAAAAAAAAAAAAnwGQAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T10:47:23.467Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-19T10:47:23.467Z"
             },
             {
               "$type": "Document",
@@ -132,8 +128,7 @@
               "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\ShiftsController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T10:43:08.078Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-19T10:43:08.078Z"
             },
             {
               "$type": "Document",
@@ -145,8 +140,7 @@
               "RelativeToolTip": "MISA.QLSX.Core\\Entities\\Shift.cs",
               "ViewState": "AgIAAFEAAAAAAAAAAAAcwFgAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T10:41:44.375Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-19T10:41:44.375Z"
             }
           ]
         }
