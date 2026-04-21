@@ -74,6 +74,15 @@ namespace MISA.QLSX.Core.Entities
         [Column("signed_at")]
         public DateTime? SignedAt { get; set; }
 
+        [Column("contract_status")]
+        public string? ContractStatus { get; set; }
+
+        [Column("end_date")]
+        public DateTime? EndDate { get; set; }
+
+        [Column("terminated_at")]
+        public DateTime? TerminatedAt { get; set; }
+
         [Column("created_at")]
         public DateTime? CreatedAt { get; set; }
 

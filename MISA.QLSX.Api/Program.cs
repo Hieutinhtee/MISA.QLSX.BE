@@ -29,6 +29,11 @@ builder.Services.AddScoped<ISalaryPolicyRepository, SalaryPolicyRepository>();
 builder.Services.AddScoped<ITaxBracketRepository, TaxBracketRepository>();
 builder.Services.AddScoped<IDeductionPolicyRepository, DeductionPolicyRepository>();
 builder.Services.AddScoped<IEmployeeTaxProfileRepository, EmployeeTaxProfileRepository>();
+builder.Services.AddScoped<ISalaryPeriodRepository, SalaryPeriodRepository>();
+builder.Services.AddScoped<IPayrollRepository, PayrollRepository>();
+builder.Services.AddScoped<IPayrollItemRepository, PayrollItemRepository>();
+builder.Services.AddScoped<IPayrollSnapshotRepository, PayrollSnapshotRepository>();
+builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 
 // Đăng ký Service
 builder.Services.AddScoped<IShiftService, ShiftService>();
@@ -39,6 +44,10 @@ builder.Services.AddScoped<ISalaryPolicyService, SalaryPolicyService>();
 builder.Services.AddScoped<ITaxBracketService, TaxBracketService>();
 builder.Services.AddScoped<IDeductionPolicyService, DeductionPolicyService>();
 builder.Services.AddScoped<IEmployeeTaxProfileService, EmployeeTaxProfileService>();
+builder.Services.AddScoped<ISalaryPeriodService, SalaryPeriodService>();
+builder.Services.AddScoped<IPayrollService, PayrollService>();
+builder.Services.AddScoped<IPayrollItemService, PayrollItemService>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
 //Cho phép gọi api không cần ktra
 builder.Services.AddCors(options =>

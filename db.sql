@@ -12,8 +12,14 @@ DROP TABLE IF EXISTS `evaluation`;
 DROP TABLE IF EXISTS `business_trip`;
 DROP TABLE IF EXISTS `attendance`;
 DROP TABLE IF EXISTS `payroll_item`;
+DROP TABLE IF EXISTS `payroll_snapshot`;
 DROP TABLE IF EXISTS `payroll`;
 DROP TABLE IF EXISTS `salary_period`;
+DROP TABLE IF EXISTS `contract_history`;
+DROP TABLE IF EXISTS `employee_tax_profile`;
+DROP TABLE IF EXISTS `tax_bracket`;
+DROP TABLE IF EXISTS `deduction_policy`;
+DROP TABLE IF EXISTS `salary_policy`;
 DROP TABLE IF EXISTS `employee`;
 DROP TABLE IF EXISTS `department`;
 DROP TABLE IF EXISTS `account`;
@@ -139,6 +145,9 @@ CREATE TABLE `contract` (
   `attachment_link` TEXT DEFAULT NULL COMMENT 'Cột attachment_link: Đường dẫn tệp đính kèm hợp đồng',
   `is_signed` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Cột is_signed: Trạng thái ký hợp đồng, 0 chưa ký, 1 đã ký',
   `signed_at` DATETIME DEFAULT NULL COMMENT 'Cột signed_at: Thời điểm ký hợp đồng',
+  `contract_status` ENUM('draft','signed','active','expired','terminated') NOT NULL DEFAULT 'draft' COMMENT 'Cột contract_status: Trạng thái hợp đồng: nháp, đã ký, hiệu lực, hết hạn, chấm dứt',
+  `end_date` DATE DEFAULT NULL COMMENT 'Cột end_date: Ngày kết thúc hợp đồng',
+  `terminated_at` DATETIME DEFAULT NULL COMMENT 'Cột terminated_at: Thời điểm chấm dứt hợp đồng',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo hợp đồng',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo hợp đồng',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của hợp đồng',
@@ -151,6 +160,8 @@ CREATE TABLE `contract` (
   KEY `idx_contract_company_representative_id` (`company_representative_id`),
   KEY `idx_contract_effective_date` (`effective_date`),
   KEY `idx_contract_is_signed` (`is_signed`),
+  KEY `idx_contract_status` (`contract_status`),
+  KEY `idx_contract_effective_end` (`employee_id`,`effective_date`,`end_date`),
   CONSTRAINT `fk_contract_template` FOREIGN KEY (`template_id`) REFERENCES `contract_template` (`template_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng contract: Lưu thông tin hợp đồng lao động của nhân viên';
 
@@ -397,13 +408,22 @@ CREATE TABLE `payroll` (
   `payroll_code` VARCHAR(50) NOT NULL COMMENT 'Cột payroll_code: Mã bảng lương duy nhất để tra cứu',
   `salary_period_id` CHAR(36) NOT NULL COMMENT 'Cột salary_period_id: Khóa ngoại tham chiếu kỳ lương',
   `employee_id` CHAR(36) NOT NULL COMMENT 'Cột employee_id: Khóa ngoại tham chiếu nhân viên',
-  `status` ENUM('draft','processing','locked') NOT NULL DEFAULT 'draft' COMMENT 'Cột status: Trạng thái xử lý bảng lương, draft là nháp, processing là đang xử lý, locked là đã khóa',
+  `status` ENUM('draft','processing','locked','paid') NOT NULL DEFAULT 'draft' COMMENT 'Cột status: Trạng thái bảng lương: nháp, đang xử lý, khóa, đã thanh toán',
   `gross_salary` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột gross_salary: Tổng lương gross của kỳ',
   `net_salary` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột net_salary: Tổng lương net thực nhận của kỳ',
   `taxable_salary` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột taxable_salary: Tổng thu nhập chịu thuế của kỳ',
+  `pit_tax_amount` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột pit_tax_amount: Tổng thuế TNCN phải đóng',
+  `insurance_deduction` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột insurance_deduction: Tổng khấu trừ bảo hiểm (BHXH+BHYT+BHTN)',
+  `working_days_actual` DECIMAL(6,2) NOT NULL DEFAULT 0 COMMENT 'Cột working_days_actual: Số ngày công thực tế làm việc',
+  `working_days_standard` DECIMAL(6,2) NOT NULL DEFAULT 0 COMMENT 'Cột working_days_standard: Số ngày công chuẩn trong tháng',
   `total_allowance` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột total_allowance: Tổng các khoản phụ cấp của kỳ',
   `total_addition` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột total_addition: Tổng các khoản cộng thêm của kỳ',
   `total_deduction` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột total_deduction: Tổng các khoản khấu trừ của kỳ',
+  `locked_at` DATETIME DEFAULT NULL COMMENT 'Cột locked_at: Thời điểm khóa bảng lương',
+  `paid_at` DATETIME DEFAULT NULL COMMENT 'Cột paid_at: Thời điểm thanh toán bảng lương',
+  `salary_policy_id` CHAR(36) DEFAULT NULL COMMENT 'Cột salary_policy_id: Khóa ngoại tham chiếu chính sách lương áp dụng',
+  `deduction_policy_id` CHAR(36) DEFAULT NULL COMMENT 'Cột deduction_policy_id: Khóa ngoại tham chiếu chính sách giảm trừ/bảo hiểm',
+  `employee_tax_profile_id` CHAR(36) DEFAULT NULL COMMENT 'Cột employee_tax_profile_id: Khóa ngoại tham chiếu hồ sơ thuế nhân viên',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo bảng lương',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu bảng lương',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của bảng lương',
@@ -413,8 +433,14 @@ CREATE TABLE `payroll` (
   UNIQUE KEY `uk_payroll_period_employee` (`salary_period_id`,`employee_id`),
   KEY `idx_payroll_status` (`status`),
   KEY `idx_payroll_employee_id` (`employee_id`),
+  KEY `idx_payroll_salary_policy` (`salary_policy_id`),
+  KEY `idx_payroll_deduction_policy` (`deduction_policy_id`),
+  KEY `idx_payroll_employee_tax_profile` (`employee_tax_profile_id`),
   CONSTRAINT `fk_payroll_salary_period` FOREIGN KEY (`salary_period_id`) REFERENCES `salary_period` (`salary_period_id`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_payroll_employee` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`) ON UPDATE CASCADE ON DELETE CASCADE
+  CONSTRAINT `fk_payroll_employee` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `fk_payroll_salary_policy` FOREIGN KEY (`salary_policy_id`) REFERENCES `salary_policy` (`policy_id`) ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT `fk_payroll_deduction_policy` FOREIGN KEY (`deduction_policy_id`) REFERENCES `deduction_policy` (`deduction_policy_id`) ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT `fk_payroll_employee_tax_profile` FOREIGN KEY (`employee_tax_profile_id`) REFERENCES `employee_tax_profile` (`employee_tax_profile_id`) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng payroll: Lưu bảng lương tổng theo tháng của từng nhân viên';
 
 CREATE TABLE `payroll_item` (
@@ -423,6 +449,7 @@ CREATE TABLE `payroll_item` (
   `payroll_id` CHAR(36) NOT NULL COMMENT 'Cột payroll_id: Khóa ngoại tham chiếu bảng lương tổng',
   `item_type` ENUM('addition','deduction') NOT NULL COMMENT 'Cột item_type: Loại khoản mục lương phát sinh theo tháng, gồm cộng thêm, khấu trừ',
   `item_name` VARCHAR(255) NOT NULL COMMENT 'Cột item_name: Tên khoản mục hiển thị trên bảng lương',
+  `formula_component` ENUM('base_salary','allowance','bonus','penalty','insurance','tax','other') DEFAULT 'other' COMMENT 'Cột formula_component: Phân loại thành phần công thức tính lương',
   `amount` DECIMAL(15,2) NOT NULL COMMENT 'Cột amount: Giá trị tiền của khoản mục',
   `source_table` ENUM('attendance','evaluation','business_trip','leave_request','manual') NOT NULL DEFAULT 'manual' COMMENT 'Cột source_table: Nguồn phát sinh khoản mục lương theo tháng',
   `source_id` CHAR(36) DEFAULT NULL COMMENT 'Cột source_id: UUID bản ghi nguồn tạo ra khoản mục',
@@ -443,6 +470,140 @@ CREATE TABLE `payroll_item` (
   ),
   CONSTRAINT `fk_payroll_item_payroll` FOREIGN KEY (`payroll_id`) REFERENCES `payroll` (`payroll_id`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng payroll_item: Lưu các khoản phụ cấp, cộng thêm và khấu trừ theo tháng';
+
+CREATE TABLE `payroll_snapshot` (
+  `payroll_snapshot_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột payroll_snapshot_id: Khóa chính UUID của snapshot payroll',
+  `payroll_id` CHAR(36) NOT NULL COMMENT 'Cột payroll_id: Khóa ngoại tham chiếu bảng payroll được snapshot',
+  `snapshot_at` DATETIME NOT NULL COMMENT 'Cột snapshot_at: Thời điểm chụp snapshot khi lock kỳ lương',
+  `contract_payload` JSON DEFAULT NULL COMMENT 'Cột contract_payload: Snapshot dữ liệu hợp đồng phục vụ tính lương',
+  `policy_payload` JSON DEFAULT NULL COMMENT 'Cột policy_payload: Snapshot dữ liệu policy lương/giảm trừ/thuế',
+  `tax_profile_payload` JSON DEFAULT NULL COMMENT 'Cột tax_profile_payload: Snapshot dữ liệu hồ sơ thuế nhân viên',
+  `payroll_payload` JSON NOT NULL COMMENT 'Cột payroll_payload: Snapshot dữ liệu payroll tổng tại thời điểm lock',
+  `items_payload` JSON DEFAULT NULL COMMENT 'Cột items_payload: Snapshot danh sách payroll item tại thời điểm lock',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo bản ghi snapshot',
+  `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo snapshot',
+  PRIMARY KEY (`payroll_snapshot_id`),
+  UNIQUE KEY `uk_payroll_snapshot_payroll` (`payroll_id`),
+  KEY `idx_payroll_snapshot_at` (`snapshot_at`),
+  CONSTRAINT `fk_payroll_snapshot_payroll` FOREIGN KEY (`payroll_id`) REFERENCES `payroll` (`payroll_id`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng payroll_snapshot: Lưu snapshot đầy đủ khi khóa bảng lương';
+
+-- =============================
+-- POLICY & CONFIGURATION TABLES
+-- =============================
+
+CREATE TABLE `salary_policy` (
+  `policy_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột policy_id: Khóa chính UUID của chính sách lương',
+  `policy_code` VARCHAR(50) NOT NULL COMMENT 'Cột policy_code: Mã chính sách lương duy nhất để tra cứu',
+  `policy_name` VARCHAR(255) NOT NULL COMMENT 'Cột policy_name: Tên chính sách lương',
+  `standard_workdays` DECIMAL(6,2) NOT NULL DEFAULT 22.00 COMMENT 'Cột standard_workdays: Số ngày công chuẩn trong tháng để tính lương ngày',
+  `overtime_multiplier_weekday` DECIMAL(6,2) NOT NULL DEFAULT 1.50 COMMENT 'Cột overtime_multiplier_weekday: Hệ số lương tăng cho ngày thường',
+  `overtime_multiplier_weekend` DECIMAL(6,2) NOT NULL DEFAULT 2.00 COMMENT 'Cột overtime_multiplier_weekend: Hệ số lương tăng cho ngày cuối tuần',
+  `overtime_multiplier_holiday` DECIMAL(6,2) NOT NULL DEFAULT 3.00 COMMENT 'Cột overtime_multiplier_holiday: Hệ số lương tăng cho ngày lễ',
+  `effective_from` DATE NOT NULL COMMENT 'Cột effective_from: Ngày bắt đầu áp dụng chính sách',
+  `effective_to` DATE DEFAULT NULL COMMENT 'Cột effective_to: Ngày kết thúc áp dụng chính sách (NULL = còn hiệu lực)',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_active: Trạng thái hoạt động, 1 là hoạt động, 0 là ngừng',
+  `description` TEXT DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả thêm về chính sách lương',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo chính sách',
+  `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo',
+  `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất',
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất',
+  PRIMARY KEY (`policy_id`),
+  UNIQUE KEY `uk_salary_policy_code` (`policy_code`),
+  KEY `idx_salary_policy_effective` (`effective_from`,`effective_to`),
+  KEY `idx_salary_policy_active` (`is_active`),
+  CONSTRAINT `chk_salary_policy_workdays` CHECK (`standard_workdays` > 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng salary_policy: Lưu chính sách lương và thông số tính lương theo tháng';
+
+CREATE TABLE `tax_bracket` (
+  `tax_bracket_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột tax_bracket_id: Khóa chính UUID của bậc thuế TNCN',
+  `bracket_code` VARCHAR(50) NOT NULL COMMENT 'Cột bracket_code: Mã bậc thuế để tra cứu',
+  `bracket_name` VARCHAR(255) NOT NULL COMMENT 'Cột bracket_name: Tên bậc thuế hiển thị',
+  `lower_bound` DECIMAL(15,2) NOT NULL COMMENT 'Cột lower_bound: Cận dưới của thu nhập chịu thuế',
+  `upper_bound` DECIMAL(15,2) DEFAULT NULL COMMENT 'Cột upper_bound: Cận trên của thu nhập chịu thuế (NULL = không giới hạn)',
+  `tax_rate` DECIMAL(6,2) NOT NULL COMMENT 'Cột tax_rate: Tỷ lệ thuế suất (%)',
+  `quick_deduction` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột quick_deduction: Khoản giảm trừ nhanh cho bậc này',
+  `effective_from` DATE NOT NULL COMMENT 'Cột effective_from: Ngày bắt đầu áp dụng bậc thuế',
+  `effective_to` DATE DEFAULT NULL COMMENT 'Cột effective_to: Ngày kết thúc áp dụng bậc thuế (NULL = còn hiệu lực)',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_active: Trạng thái hoạt động',
+  `description` TEXT DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả về bậc thuế',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo bậc thuế',
+  `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo',
+  `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất',
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất',
+  PRIMARY KEY (`tax_bracket_id`),
+  UNIQUE KEY `uk_tax_bracket_code` (`bracket_code`),
+  KEY `idx_tax_bracket_effective` (`effective_from`,`effective_to`),
+  KEY `idx_tax_bracket_bound` (`lower_bound`,`upper_bound`),
+  KEY `idx_tax_bracket_active` (`is_active`),
+  CONSTRAINT `chk_tax_bracket_bound` CHECK (`upper_bound` IS NULL OR `upper_bound` > `lower_bound`),
+  CONSTRAINT `chk_tax_bracket_rate` CHECK (`tax_rate` >= 0 AND `tax_rate` <= 100)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng tax_bracket: Lưu bậc thuế TNCN theo từng năm';
+
+CREATE TABLE `deduction_policy` (
+  `deduction_policy_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột deduction_policy_id: Khóa chính UUID của chính sách giảm trừ/bảo hiểm',
+  `policy_code` VARCHAR(50) NOT NULL COMMENT 'Cột policy_code: Mã chính sách duy nhất để tra cứu',
+  `policy_name` VARCHAR(255) NOT NULL COMMENT 'Cột policy_name: Tên chính sách',
+  `social_insurance_rate` DECIMAL(6,2) NOT NULL DEFAULT 8.00 COMMENT 'Cột social_insurance_rate: Tỷ lệ đóng BHXH (%)',
+  `health_insurance_rate` DECIMAL(6,2) NOT NULL DEFAULT 1.50 COMMENT 'Cột health_insurance_rate: Tỷ lệ đóng BHYT (%)',
+  `unemployment_insurance_rate` DECIMAL(6,2) NOT NULL DEFAULT 1.00 COMMENT 'Cột unemployment_insurance_rate: Tỷ lệ đóng BHTN (%)',
+  `personal_deduction_amount` DECIMAL(15,2) NOT NULL DEFAULT 11000000 COMMENT 'Cột personal_deduction_amount: Khoản giảm trừ cá nhân',
+  `dependent_deduction_amount` DECIMAL(15,2) NOT NULL DEFAULT 4400000 COMMENT 'Cột dependent_deduction_amount: Khoản giảm trừ cho mỗi người phụ thuộc',
+  `effective_from` DATE NOT NULL COMMENT 'Cột effective_from: Ngày bắt đầu áp dụng chính sách',
+  `effective_to` DATE DEFAULT NULL COMMENT 'Cột effective_to: Ngày kết thúc áp dụng chính sách (NULL = còn hiệu lực)',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_active: Trạng thái hoạt động',
+  `description` TEXT DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả về chính sách',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo chính sách',
+  `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo',
+  `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất',
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất',
+  PRIMARY KEY (`deduction_policy_id`),
+  UNIQUE KEY `uk_deduction_policy_code` (`policy_code`),
+  KEY `idx_deduction_policy_effective` (`effective_from`,`effective_to`),
+  KEY `idx_deduction_policy_active` (`is_active`),
+  CONSTRAINT `chk_deduction_rates` CHECK (
+    `social_insurance_rate` >= 0 AND `social_insurance_rate` <= 100
+    AND `health_insurance_rate` >= 0 AND `health_insurance_rate` <= 100
+    AND `unemployment_insurance_rate` >= 0 AND `unemployment_insurance_rate` <= 100
+  )
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng deduction_policy: Lưu chính sách giảm trừ và đóng bảo hiểm theo từng năm';
+
+CREATE TABLE `employee_tax_profile` (
+  `employee_tax_profile_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột employee_tax_profile_id: Khóa chính UUID của hồ sơ thuế nhân viên',
+  `employee_id` CHAR(36) NOT NULL COMMENT 'Cột employee_id: Khóa ngoại tham chiếu nhân viên',
+  `tax_code` VARCHAR(30) DEFAULT NULL COMMENT 'Cột tax_code: Mã số thuế của nhân viên',
+  `dependent_count` INT NOT NULL DEFAULT 0 COMMENT 'Cột dependent_count: Số người phụ thuộc',
+  `is_resident` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_resident: Có phải cư dân Việt Nam hay không (1 = có)',
+  `effective_from` DATE NOT NULL COMMENT 'Cột effective_from: Ngày bắt đầu áp dụng hồ sơ thuế',
+  `effective_to` DATE DEFAULT NULL COMMENT 'Cột effective_to: Ngày kết thúc áp dụng hồ sơ thuế (NULL = còn hiệu lực)',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_active: Trạng thái hoạt động',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo hồ sơ',
+  `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo',
+  `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất',
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất',
+  PRIMARY KEY (`employee_tax_profile_id`),
+  UNIQUE KEY `uk_employee_tax_profile` (`employee_id`,`effective_from`),
+  KEY `idx_employee_tax_effective` (`effective_from`,`effective_to`),
+  KEY `idx_employee_tax_active` (`is_active`),
+  CONSTRAINT `fk_employee_tax_profile_employee` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `chk_employee_tax_dependent` CHECK (`dependent_count` >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng employee_tax_profile: Lưu hồ sơ thuế và thông tin phụ thuộc của nhân viên';
+
+CREATE TABLE `contract_history` (
+  `contract_history_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột contract_history_id: Khóa chính UUID của bản ghi lịch sử',
+  `contract_id` CHAR(36) NOT NULL COMMENT 'Cột contract_id: Khóa ngoại tham chiếu hợp đồng',
+  `change_type` ENUM('created','signed','updated_salary','updated_allowance','status_changed','terminated') NOT NULL COMMENT 'Cột change_type: Loại thay đổi hợp đồng',
+  `old_values` JSON DEFAULT NULL COMMENT 'Cột old_values: Giá trị cũ dưới dạng JSON',
+  `new_values` JSON DEFAULT NULL COMMENT 'Cột new_values: Giá trị mới dưới dạng JSON',
+  `effective_date` DATE NOT NULL COMMENT 'Cột effective_date: Ngày thay đổi có hiệu lực',
+  `reason` VARCHAR(255) DEFAULT NULL COMMENT 'Cột reason: Lý do thay đổi',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm ghi lại',
+  `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo bản ghi',
+  PRIMARY KEY (`contract_history_id`),
+  KEY `idx_contract_history_contract` (`contract_id`),
+  KEY `idx_contract_history_effective` (`effective_date`),
+  CONSTRAINT `fk_contract_history_contract` FOREIGN KEY (`contract_id`) REFERENCES `contract` (`contract_id`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng contract_history: Lưu lịch sử thay đổi chi tiết của hợp đồng';
 
 -- =========================================================
 -- DỮ LIỆU MẪU
@@ -695,6 +856,55 @@ SELECT
   200000
 FROM employee e
 JOIN contract c ON c.employee_id = e.employee_id;
+
+-- Seed data cho các bảng policy
+INSERT INTO `salary_policy`
+(`policy_id`,`policy_code`,`policy_name`,`standard_workdays`,`overtime_multiplier_weekday`,`overtime_multiplier_weekend`,`overtime_multiplier_holiday`,`effective_from`,`is_active`,`description`)
+VALUES
+('a1000000-0000-0000-0000-000000000001','SALPOL_2026','Chính sách lương chuẩn 2026',22.00,1.50,2.00,3.00,'2026-01-01',1,'Tính lương ngày = (lương_cơ_bản * tỷ_lệ / 100) / 22, áp dụng cho tất cả nhân viên')
+ON DUPLICATE KEY UPDATE
+  `policy_name` = VALUES(`policy_name`),
+  `standard_workdays` = VALUES(`standard_workdays`),
+  `overtime_multiplier_weekday` = VALUES(`overtime_multiplier_weekday`),
+  `overtime_multiplier_weekend` = VALUES(`overtime_multiplier_weekend`),
+  `overtime_multiplier_holiday` = VALUES(`overtime_multiplier_holiday`),
+  `effective_from` = VALUES(`effective_from`),
+  `is_active` = VALUES(`is_active`),
+  `description` = VALUES(`description`);
+
+INSERT INTO `deduction_policy`
+(`deduction_policy_id`,`policy_code`,`policy_name`,`social_insurance_rate`,`health_insurance_rate`,`unemployment_insurance_rate`,`personal_deduction_amount`,`dependent_deduction_amount`,`effective_from`,`is_active`,`description`)
+VALUES
+('a2000000-0000-0000-0000-000000000001','DEDPOL_2026','Chính sách giảm trừ/bảo hiểm 2026',8.00,1.50,1.00,11000000,4400000,'2026-01-01',1,'BHXH 8%, BHYT 1.5%, BHTN 1%, theo lương bảo hiểm; giảm trừ cá nhân 11M VND + phụ thuộc 4.4M VND/người')
+ON DUPLICATE KEY UPDATE
+  `policy_name` = VALUES(`policy_name`),
+  `social_insurance_rate` = VALUES(`social_insurance_rate`),
+  `health_insurance_rate` = VALUES(`health_insurance_rate`),
+  `unemployment_insurance_rate` = VALUES(`unemployment_insurance_rate`),
+  `personal_deduction_amount` = VALUES(`personal_deduction_amount`),
+  `dependent_deduction_amount` = VALUES(`dependent_deduction_amount`),
+  `effective_from` = VALUES(`effective_from`),
+  `is_active` = VALUES(`is_active`),
+  `description` = VALUES(`description`);
+
+INSERT INTO `tax_bracket`
+(`tax_bracket_id`,`bracket_code`,`bracket_name`,`lower_bound`,`upper_bound`,`tax_rate`,`quick_deduction`,`effective_from`,`is_active`)
+VALUES
+('a3000000-0000-0000-0000-000000000001','PIT_B1_2026','Bậc 1: 0 - 5 triệu',0,5000000,5.00,0,'2026-01-01',1),
+('a3000000-0000-0000-0000-000000000002','PIT_B2_2026','Bậc 2: 5 - 10 triệu',5000000,10000000,10.00,250000,'2026-01-01',1),
+('a3000000-0000-0000-0000-000000000003','PIT_B3_2026','Bậc 3: 10 - 18 triệu',10000000,18000000,15.00,750000,'2026-01-01',1),
+('a3000000-0000-0000-0000-000000000004','PIT_B4_2026','Bậc 4: 18 - 32 triệu',18000000,32000000,20.00,1650000,'2026-01-01',1),
+('a3000000-0000-0000-0000-000000000005','PIT_B5_2026','Bậc 5: 32 - 52 triệu',32000000,52000000,25.00,3250000,'2026-01-01',1),
+('a3000000-0000-0000-0000-000000000006','PIT_B6_2026','Bậc 6: 52 - 80 triệu',52000000,80000000,30.00,5850000,'2026-01-01',1),
+('a3000000-0000-0000-0000-000000000007','PIT_B7_2026','Bậc 7: > 80 triệu',80000000,NULL,35.00,9850000,'2026-01-01',1)
+ON DUPLICATE KEY UPDATE
+  `bracket_name` = VALUES(`bracket_name`),
+  `lower_bound` = VALUES(`lower_bound`),
+  `upper_bound` = VALUES(`upper_bound`),
+  `tax_rate` = VALUES(`tax_rate`),
+  `quick_deduction` = VALUES(`quick_deduction`),
+  `effective_from` = VALUES(`effective_from`),
+  `is_active` = VALUES(`is_active`);
 
 INSERT INTO `payroll_item` (`payroll_item_id`,`payroll_item_code`,`payroll_id`,`item_type`,`item_name`,`amount`,`source_table`,`source_id`,`note`)
 SELECT
