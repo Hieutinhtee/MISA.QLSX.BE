@@ -72,7 +72,7 @@ namespace MISA.QLSX.Core.Services
                 throw new ValidateException("Salary period date invalid", "Kỳ lương thiếu ngày bắt đầu hoặc kết thúc");
 
             var employees = await _employeeRepository.GetAllAsync();
-            var existingPayrolls = await _payrollRepository.GetAllAsync();
+            var existingPayrolls = await _payrollRepository.GetBySalaryPeriodAsync(salaryPeriodId);
 
             // Loại trừ nhân viên đã có payroll trong kỳ để đảm bảo idempotent khi generate nhiều lần.
             var existingEmployeeIds = existingPayrolls
@@ -123,11 +123,16 @@ namespace MISA.QLSX.Core.Services
         }
 
         /// <summary>
-        /// Tính lương cho payroll của kỳ lương (toàn bộ hoặc theo từng nhân viên).
-        /// Có xử lý pro-rate khi hợp đồng thay đổi trong tháng theo đoạn hiệu lực.
+        /// Tính payroll cho một kỳ lương theo luồng nghiệp vụ tháng.
+        /// Luồng xử lý gồm: chọn policy hiệu lực, pro-rate hợp đồng theo đoạn ngày,
+        /// tổng hợp phát sinh chấm công, tính bảo hiểm, tính thuế TNCN và cập nhật lại payroll item.
         /// </summary>
+        /// <param name="salaryPeriodId">ID kỳ lương cần tính.</param>
+        /// <param name="employeeId">ID nhân viên tùy chọn; nếu null thì tính toàn bộ payroll trong kỳ.</param>
+        /// <returns>Số payroll được tính thành công.</returns>
         public async Task<int> CalculatePayrollsAsync(Guid salaryPeriodId, Guid? employeeId = null)
         {
+            // 0) Validate kỳ lương đầu vào và chỉ cho phép calculate khi kỳ đang draft.
             var period = await EnsureSalaryPeriodAsync(salaryPeriodId);
 
             if (!string.Equals(period.Status, "draft", StringComparison.OrdinalIgnoreCase))
@@ -138,23 +143,49 @@ namespace MISA.QLSX.Core.Services
 
             var periodStart = period.StartDate.Value.Date;
             var periodEnd = period.EndDate.Value.Date;
+            // periodStart/periodEnd là biên tính lương chính thức cho toàn bộ phép lọc dữ liệu nguồn.
 
-            var payrolls = (await _payrollRepository.GetAllAsync())
-                .Where(p => p.SalaryPeriodId == salaryPeriodId)
-                .Where(p => employeeId == null || p.EmployeeId == employeeId)
-                .ToList();
+            // 1) Lấy danh sách payroll mục tiêu trong kỳ.
+            var payrolls = await _payrollRepository.GetBySalaryPeriodAsync(salaryPeriodId, employeeId);
 
             if (payrolls.Count == 0)
                 throw new ValidateException("Payroll not found", "Không có bảng lương nào để tính cho kỳ đã chọn");
 
-            var contracts = await _contractRepository.GetAllAsync();
-            var attendances = await _attendanceRepository.GetAllAsync();
+            var employeeIds = payrolls
+                .Where(p => p.EmployeeId != null)
+                .Select(p => p.EmployeeId!.Value)
+                .Distinct()
+                .ToList();
+
+            var payrollIds = payrolls
+                .Where(p => p.PayrollId != null)
+                .Select(p => p.PayrollId!.Value)
+                .Distinct()
+                .ToList();
+
+            // 2) Tải dữ liệu nguồn một lần để tránh query lặp trong vòng foreach.
+            // contracts: phục vụ tính lương cơ bản/insurance theo hiệu lực hợp đồng.
+            // attendances: phục vụ bonus, penalty, overtime.
+            // policies/tax profiles/tax brackets: phục vụ insurance + PIT.
+            // allPayrollItems: phục vụ đồng bộ lại payroll item sau khi tính.
+            var contracts = await _contractRepository.GetEffectiveByEmployeesAsync(
+                employeeIds,
+                periodStart,
+                periodEnd
+            );
+            var attendances = await _attendanceRepository.GetByEmployeesAndDateRangeAsync(
+                employeeIds,
+                periodStart,
+                periodEnd
+            );
             var salaryPolicies = await _salaryPolicyRepository.GetAllAsync();
             var deductionPolicies = await _deductionPolicyRepository.GetAllAsync();
             var taxProfiles = await _employeeTaxProfileRepository.GetAllAsync();
             var taxBrackets = await _taxBracketRepository.GetAllAsync();
-            var allPayrollItems = await _payrollItemRepository.GetAllAsync();
+            var allPayrollItems = await _payrollItemRepository.GetByPayrollIdsAsync(payrollIds);
 
+            // 3) Chọn policy hiệu lực tại thời điểm kỳ lương bắt đầu.
+            // Quy ước hiện tại: cấu hình lương/bảo hiểm/thuế áp theo chính sách hiệu lực lúc bắt đầu kỳ.
             var salaryPolicy = GetEffectiveSalaryPolicy(salaryPolicies, periodStart);
             var deductionPolicy = GetEffectiveDeductionPolicy(deductionPolicies, periodStart);
             var effectiveTaxBrackets = GetEffectiveTaxBrackets(taxBrackets, periodStart);
@@ -162,7 +193,7 @@ namespace MISA.QLSX.Core.Services
             var affected = 0;
             foreach (var payroll in payrolls)
             {
-                // Không cho tính lại khi payroll đã khóa hoặc đã trả lương.
+                // 4) Không tính lại các bản ghi đã đóng trạng thái nghiệp vụ.
                 if (string.Equals(payroll.Status, "locked", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(payroll.Status, "paid", StringComparison.OrdinalIgnoreCase))
                 {
@@ -172,6 +203,8 @@ namespace MISA.QLSX.Core.Services
                 if (payroll.EmployeeId == null)
                     continue;
 
+                // Lọc các hợp đồng có giao với kỳ lương và đủ điều kiện trạng thái để tham gia tính.
+                // Các hợp đồng ngoài kỳ hoặc không có hiệu lực sẽ bị loại.
                 var employeeContracts = contracts
                     .Where(c => c.EmployeeId == payroll.EmployeeId)
                     .Where(c => c.EffectiveDate != null)
@@ -184,6 +217,7 @@ namespace MISA.QLSX.Core.Services
                     .OrderBy(c => c.EffectiveDate)
                     .ToList();
 
+                // Không có hợp đồng hiệu lực trong kỳ thì bỏ qua payroll này.
                 if (employeeContracts.Count == 0)
                     continue;
 
@@ -192,60 +226,83 @@ namespace MISA.QLSX.Core.Services
                     .Where(a => a.AttendanceDate != null)
                     .Where(a => a.AttendanceDate!.Value.Date >= periodStart && a.AttendanceDate.Value.Date <= periodEnd)
                     .ToList();
+                // attendanceRows có thể rỗng; khi đó bonus/penalty/overtime đều coi như 0.
 
-                // 1) Chia kỳ lương thành các đoạn theo hợp đồng hiệu lực để tính pro-rate.
+                // 5) Chia kỳ lương thành các đoạn hợp đồng để xử lý pro-rate đổi hợp đồng giữa tháng.
                 var contractSegments = BuildContractSegments(employeeContracts, periodStart, periodEnd);
+                if (contractSegments.Count == 0)
+                    continue;
+
                 var standardWorkdays = salaryPolicy?.StandardWorkdays ?? CountBusinessDays(periodStart, periodEnd);
                 if (standardWorkdays <= 0)
                     standardWorkdays = 22;
 
                 decimal baseSalaryAmount = 0;
                 decimal insuranceSalaryBase = 0;
+                decimal contractBusinessDaysTotal = 0;
                 foreach (var segment in contractSegments)
                 {
+                    // segmentBusinessDays là số ngày công chuẩn (Mon-Fri) trong đoạn hợp đồng.
                     var segmentBusinessDays = CountBusinessDays(segment.StartDate, segment.EndDate);
+                    contractBusinessDaysTotal += segmentBusinessDays;
+
+                    // Lương ngày đoạn = baseSalary * salaryRatio / standardWorkdays.
+                    // Lương cơ bản kỳ = tổng lương ngày đoạn * số ngày đoạn.
                     var salaryRatio = (segment.Contract.SalaryRatio ?? 100m) / 100m;
                     var segmentDailySalary = (segment.Contract.BaseSalary ?? 0m) * salaryRatio / standardWorkdays;
                     baseSalaryAmount += segmentDailySalary * segmentBusinessDays;
 
+                    // insuranceSalaryBase được tính độc lập từ insurance_salary để tách khỏi base_salary.
                     var insuranceDaily = (segment.Contract.InsuranceSalary ?? 0m) / standardWorkdays;
                     insuranceSalaryBase += insuranceDaily * segmentBusinessDays;
                 }
 
-                // 2) Tổng hợp phát sinh từ chấm công cho khoản cộng/trừ và tăng ca.
+                // 6) Tổng hợp phát sinh từ attendance cho khoản cộng/trừ và overtime.
                 var totalAddition = attendanceRows.Sum(a => a.BonusAmount ?? 0m);
                 var totalDeduction = attendanceRows.Sum(a => a.PenaltyAmount ?? 0m);
                 var overtimeHours = attendanceRows.Sum(a => a.OvertimeHours ?? 0m);
-                var hourlySalary = standardWorkdays > 0 ? baseSalaryAmount / (standardWorkdays * 8m) : 0m;
+
+                // Dùng đơn giá giờ trung bình theo số ngày hợp đồng hiệu lực thực tế,
+                // tránh chia lại cho standardWorkdays lần hai gây giảm đơn giá overtime.
+                var hourlySalary = contractBusinessDaysTotal > 0 ? baseSalaryAmount / (contractBusinessDaysTotal * 8m) : 0m;
                 var overtimeAddition = overtimeHours * hourlySalary * (salaryPolicy?.OvertimeMultiplierWeekday ?? 1.5m);
 
                 totalAddition += overtimeAddition;
 
                 var totalAllowance = 0m;
+                // Công thức gross hiện tại:
+                // gross = baseSalaryAmount + totalAllowance + totalAddition - totalDeduction.
+                // totalAllowance tạm để 0 vì chưa tích hợp contract_allowance ở vòng này.
                 var grossSalary = baseSalaryAmount + totalAllowance + totalAddition - totalDeduction;
 
-                // 3) Tính bảo hiểm theo deduction policy đang hiệu lực.
+                // 7) Tính bảo hiểm theo policy giảm trừ hiệu lực.
                 var insuranceRate = ((deductionPolicy?.SocialInsuranceRate ?? 0m)
                     + (deductionPolicy?.HealthInsuranceRate ?? 0m)
                     + (deductionPolicy?.UnemploymentInsuranceRate ?? 0m)) / 100m;
                 var insuranceDeduction = insuranceSalaryBase * insuranceRate;
 
+                // Chọn hồ sơ thuế hiệu lực tại thời điểm cuối kỳ để phản ánh cấu hình gần nhất trong tháng.
                 var employeeTaxProfile = taxProfiles
                     .Where(p => p.EmployeeId == payroll.EmployeeId)
-                    .Where(p => p.EffectiveFrom != null && p.EffectiveFrom.Value.Date <= periodStart)
-                    .Where(p => p.EffectiveTo == null || p.EffectiveTo.Value.Date >= periodStart)
+                    .Where(p => p.EffectiveFrom != null && p.EffectiveFrom.Value.Date <= periodEnd)
+                    .Where(p => p.EffectiveTo == null || p.EffectiveTo.Value.Date >= periodEnd)
                     .Where(p => p.IsActive == null || p.IsActive == true)
                     .OrderByDescending(p => p.EffectiveFrom)
                     .FirstOrDefault();
+                // Nếu không có tax profile thì dependentCount mặc định về 0.
 
                 var personalDeduction = deductionPolicy?.PersonalDeductionAmount ?? 0m;
                 var dependentDeduction = (deductionPolicy?.DependentDeductionAmount ?? 0m) * (employeeTaxProfile?.DependentCount ?? 0);
                 var taxableSalary = Math.Max(0m, grossSalary - insuranceDeduction - personalDeduction - dependentDeduction);
+                // taxableSalary luôn >= 0 để tránh thuế âm.
 
-                // 4) Tính thuế TNCN theo biểu thuế lũy tiến và tính net salary.
+                // 8) Tính thuế TNCN theo biểu lũy tiến và ra lương thực nhận.
                 var pitTaxAmount = CalculatePitTax(taxableSalary, effectiveTaxBrackets);
                 var netSalary = grossSalary - insuranceDeduction - pitTaxAmount;
+                // netSalary có thể âm nếu dữ liệu đầu vào phát sinh khấu trừ lớn bất thường.
+                // Hệ thống hiện chưa chặn net âm để không che giấu sai lệch dữ liệu nguồn.
 
+                // 9) Cập nhật aggregate payroll theo quy ước làm tròn của hệ thống.
                 payroll.Status = "draft";
                 payroll.GrossSalary = RoundMoney(grossSalary);
                 payroll.NetSalary = RoundMoney(netSalary);
@@ -261,8 +318,10 @@ namespace MISA.QLSX.Core.Services
                 payroll.DeductionPolicyId = deductionPolicy?.DeductionPolicyId;
                 payroll.EmployeeTaxProfileId = employeeTaxProfile?.EmployeeTaxProfileId;
                 payroll.UpdatedAt = DateTime.Now;
+                // workingDaysActual quy đổi theo 8h/ngày công.
 
-                // Cập nhật payroll tổng và đồng bộ lại payroll item tương ứng kết quả vừa tính.
+                // 10) Lưu payroll tổng và đồng bộ lại các payroll item đi kèm.
+                // ReplacePayrollItemsAsync sẽ xóa item cũ và tạo item mới theo aggregate hiện tại.
                 await _payrollRepository.UpdateAsync(payroll.PayrollId!.Value, payroll);
                 await ReplacePayrollItemsAsync(payroll, allPayrollItems);
                 affected++;
@@ -401,7 +460,12 @@ namespace MISA.QLSX.Core.Services
                 throw new ValidateException("PayrollCode duplicate", "Mã bảng lương đã tồn tại");
         }
 
-        // Validate kỳ lương tồn tại trước khi thực hiện workflow.
+        /// <summary>
+        /// Kiểm tra kỳ lương có tồn tại theo ID trước khi thực hiện workflow payroll.
+        /// </summary>
+        /// <param name="salaryPeriodId">ID kỳ lương cần kiểm tra.</param>
+        /// <returns>Đối tượng kỳ lương nếu tồn tại.</returns>
+        /// <exception cref="NotFoundException">Ném ra khi không tìm thấy kỳ lương theo ID.</exception>
         private async Task<SalaryPeriod> EnsureSalaryPeriodAsync(Guid salaryPeriodId)
         {
             var period = await _salaryPeriodRepository.GetById(salaryPeriodId);
@@ -411,11 +475,22 @@ namespace MISA.QLSX.Core.Services
             return period;
         }
 
+        /// <summary>
+        /// Làm tròn tiền theo quy ước hệ thống: 0 chữ số thập phân, midpoint away from zero.
+        /// </summary>
+        /// <param name="value">Giá trị tiền cần làm tròn.</param>
+        /// <returns>Giá trị đã làm tròn.</returns>
         private static decimal RoundMoney(decimal value)
         {
             return Math.Round(value, 0, MidpointRounding.AwayFromZero);
         }
 
+        /// <summary>
+        /// Đếm số ngày công chuẩn (thứ 2 đến thứ 6) trong một khoảng thời gian.
+        /// </summary>
+        /// <param name="startDate">Ngày bắt đầu (bao gồm).</param>
+        /// <param name="endDate">Ngày kết thúc (bao gồm).</param>
+        /// <returns>Số ngày làm việc trong khoảng; trả về 0 nếu endDate nhỏ hơn startDate.</returns>
         private static int CountBusinessDays(DateTime startDate, DateTime endDate)
         {
             if (endDate < startDate)
@@ -431,7 +506,13 @@ namespace MISA.QLSX.Core.Services
             return count;
         }
 
-        // Lấy policy lương hiệu lực theo thời điểm tính lương.
+        /// <summary>
+        /// Lấy chính sách lương hiệu lực tại một thời điểm.
+        /// Ưu tiên bản ghi có EffectiveFrom gần nhất và còn trong khoảng hiệu lực.
+        /// </summary>
+        /// <param name="policies">Danh sách chính sách lương.</param>
+        /// <param name="atDate">Thời điểm cần tra cứu hiệu lực.</param>
+        /// <returns>Chính sách lương phù hợp; null nếu không tìm thấy.</returns>
         private static SalaryPolicy? GetEffectiveSalaryPolicy(List<SalaryPolicy> policies, DateTime atDate)
         {
             return policies
@@ -442,7 +523,13 @@ namespace MISA.QLSX.Core.Services
                 .FirstOrDefault();
         }
 
-        // Lấy policy giảm trừ/bảo hiểm hiệu lực theo thời điểm tính lương.
+        /// <summary>
+        /// Lấy chính sách giảm trừ/bảo hiểm hiệu lực tại một thời điểm.
+        /// Ưu tiên bản ghi có EffectiveFrom gần nhất và còn trong khoảng hiệu lực.
+        /// </summary>
+        /// <param name="policies">Danh sách chính sách giảm trừ/bảo hiểm.</param>
+        /// <param name="atDate">Thời điểm cần tra cứu hiệu lực.</param>
+        /// <returns>Chính sách giảm trừ phù hợp; null nếu không tìm thấy.</returns>
         private static DeductionPolicy? GetEffectiveDeductionPolicy(List<DeductionPolicy> policies, DateTime atDate)
         {
             return policies
@@ -453,7 +540,12 @@ namespace MISA.QLSX.Core.Services
                 .FirstOrDefault();
         }
 
-        // Lấy danh sách bậc thuế đang hiệu lực, sắp theo cận dưới để chọn đúng bracket.
+        /// <summary>
+        /// Lấy danh sách bậc thuế hiệu lực tại một thời điểm và sắp theo cận dưới tăng dần.
+        /// </summary>
+        /// <param name="brackets">Danh sách bậc thuế.</param>
+        /// <param name="atDate">Thời điểm cần tra cứu hiệu lực.</param>
+        /// <returns>Danh sách bậc thuế đang hiệu lực tại thời điểm chỉ định.</returns>
         private static List<TaxBracket> GetEffectiveTaxBrackets(List<TaxBracket> brackets, DateTime atDate)
         {
             return brackets
@@ -464,7 +556,13 @@ namespace MISA.QLSX.Core.Services
                 .ToList();
         }
 
-        // Công thức PIT theo bracket đang khớp taxable salary.
+        /// <summary>
+        /// Tính thuế TNCN theo bậc thuế phù hợp với thu nhập chịu thuế.
+        /// Công thức: (taxable - lowerBound) * rate + quickDeduction.
+        /// </summary>
+        /// <param name="taxableSalary">Thu nhập chịu thuế.</param>
+        /// <param name="effectiveTaxBrackets">Danh sách bậc thuế đang hiệu lực.</param>
+        /// <returns>Số thuế TNCN phải nộp; luôn không âm.</returns>
         private static decimal CalculatePitTax(decimal taxableSalary, List<TaxBracket> effectiveBrackets)
         {
             if (taxableSalary <= 0 || effectiveBrackets.Count == 0)
@@ -486,7 +584,14 @@ namespace MISA.QLSX.Core.Services
             return pit < 0 ? 0 : pit;
         }
 
-        // Build các đoạn hợp đồng trong kỳ để xử lý case đổi hợp đồng giữa tháng.
+        /// <summary>
+        /// Tạo các đoạn hợp đồng giao với kỳ lương để phục vụ tính pro-rate.
+        /// Mỗi đoạn biểu diễn một khoảng ngày liên tục ứng với một hợp đồng hiệu lực.
+        /// </summary>
+        /// <param name="contracts">Danh sách hợp đồng của nhân viên, đã sắp theo EffectiveDate tăng dần.</param>
+        /// <param name="periodStart">Ngày bắt đầu kỳ lương.</param>
+        /// <param name="periodEnd">Ngày kết thúc kỳ lương.</param>
+        /// <returns>Danh sách đoạn hợp đồng hợp lệ trong kỳ.</returns>
         private static List<ContractSegment> BuildContractSegments(
             List<Contract> contracts,
             DateTime periodStart,
@@ -531,7 +636,13 @@ namespace MISA.QLSX.Core.Services
             return segments;
         }
 
-        // Đồng bộ lại toàn bộ payroll item theo kết quả mới, tránh giữ item cũ sai số liệu.
+        /// <summary>
+        /// Đồng bộ lại toàn bộ payroll item theo kết quả aggregate mới nhất của payroll.
+        /// Thực hiện xóa item cũ và tạo lại các item chuẩn (base, insurance, tax).
+        /// </summary>
+        /// <param name="payroll">Bảng lương tổng đã được tính toán.</param>
+        /// <param name="allExistingItems">Danh sách payroll item hiện có trong hệ thống.</param>
+        /// <returns>Task bất đồng bộ.</returns>
         private async Task ReplacePayrollItemsAsync(Payroll payroll, List<PayrollItem> allExistingItems)
         {
             if (payroll.PayrollId == null || payroll.PayrollCode == null)
@@ -602,12 +713,30 @@ namespace MISA.QLSX.Core.Services
             }
         }
 
+        /// <summary>
+        /// Sinh mã payroll item duy nhất theo mẫu PI-{payrollCode}-{suffix}-{random}.
+        /// </summary>
+        /// <param name="payrollCode">Mã payroll tổng.</param>
+        /// <param name="suffix">Hậu tố nhóm khoản mục (ví dụ: BASE, INS, TAX).</param>
+        /// <returns>Mã payroll item đã chuẩn hóa.</returns>
         private static string BuildPayrollItemCode(string payrollCode, string suffix)
         {
             return $"PI-{payrollCode}-{suffix}-{Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper()}";
         }
 
-        // Upsert snapshot: xóa snapshot cũ (nếu có) và ghi bản snapshot mới tại thời điểm lock.
+        /// <summary>
+        /// Upsert snapshot cho một payroll tại thời điểm khóa kỳ.
+        /// Nếu đã tồn tại snapshot cũ thì xóa trước khi ghi snapshot mới.
+        /// </summary>
+        /// <param name="payroll">Bảng lương cần snapshot.</param>
+        /// <param name="allPayrollItems">Danh sách payroll item toàn hệ thống.</param>
+        /// <param name="allContracts">Danh sách hợp đồng toàn hệ thống.</param>
+        /// <param name="salaryPolicies">Danh sách chính sách lương.</param>
+        /// <param name="deductionPolicies">Danh sách chính sách giảm trừ/bảo hiểm.</param>
+        /// <param name="taxProfiles">Danh sách hồ sơ thuế nhân viên.</param>
+        /// <param name="allSnapshots">Danh sách snapshot hiện có.</param>
+        /// <param name="snapshotAt">Thời điểm ghi snapshot.</param>
+        /// <returns>Task bất đồng bộ.</returns>
         private async Task UpsertPayrollSnapshotAsync(
             Payroll payroll,
             List<PayrollItem> allPayrollItems,

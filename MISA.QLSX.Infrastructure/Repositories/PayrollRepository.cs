@@ -2,14 +2,26 @@ using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Core.Interfaces.Repository;
 using MISA.QLSX.Infrastructure.Connection;
+using Dapper;
 
 namespace MISA.QLSX.Infrastructure.Repositories
 {
+    /// <summary>
+    /// Cung cấp truy cập dữ liệu bảng lương và các truy vấn theo kỳ lương phục vụ xử lý nghiệp vụ lương.
+    /// </summary>
     public class PayrollRepository : BaseRepository<Payroll>, IPayrollRepository
     {
+        /// <summary>
+        /// Khởi tạo repository bảng lương với factory tạo kết nối MySQL.
+        /// </summary>
+        /// <param name="factory">Factory tạo kết nối cơ sở dữ liệu.</param>
         public PayrollRepository(MySqlConnectionFactory factory)
             : base(factory) { }
 
+        /// <summary>
+        /// Trả về danh sách các cột được dùng cho tìm kiếm nhanh bảng lương.
+        /// </summary>
+        /// <returns>Tập tên cột hỗ trợ tìm kiếm.</returns>
         protected override HashSet<string> GetSearchFields()
         {
             return new HashSet<string> { "payroll_code", "status" };
@@ -35,5 +47,29 @@ namespace MISA.QLSX.Infrastructure.Repositories
                 ["lockedAt"] = new() { Column = "locked_at", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte", "isnull", "notnull" } },
                 ["paidAt"] = new() { Column = "paid_at", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte", "isnull", "notnull" } },
             };
+
+        /// <summary>
+        /// Lấy danh sách bảng lương theo kỳ lương và tùy chọn lọc theo nhân viên.
+        /// </summary>
+        /// <param name="salaryPeriodId">Định danh kỳ lương cần truy vấn.</param>
+        /// <param name="employeeId">Định danh nhân viên cần lọc, để trống nếu lấy toàn bộ trong kỳ.</param>
+        /// <returns>Danh sách bảng lương thỏa điều kiện lọc.</returns>
+        public async Task<List<Payroll>> GetBySalaryPeriodAsync(Guid salaryPeriodId, Guid? employeeId = null)
+        {
+            using var conn = Connection;
+            var sql =
+                $@"SELECT *
+                    FROM {_tableName}
+                    WHERE salary_period_id = @SalaryPeriodId
+                      AND (@EmployeeId IS NULL OR employee_id = @EmployeeId)
+                    ORDER BY updated_at DESC";
+
+            var data = await conn.QueryAsync<Payroll>(
+                sql,
+                new { SalaryPeriodId = salaryPeriodId, EmployeeId = employeeId }
+            );
+
+            return data.ToList();
+        }
     }
 }
