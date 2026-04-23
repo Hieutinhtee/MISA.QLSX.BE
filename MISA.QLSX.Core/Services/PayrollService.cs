@@ -197,10 +197,10 @@ namespace MISA.QLSX.Core.Services
             // ----------------------------------------------------------------
             // contracts      : hợp đồng có hiệu lực giao với kỳ → căn cứ tính lương cơ bản và BH.
             // attendances    : chấm công trong kỳ → bonus, penalty, overtime, giờ công thực tế.
-            // salaryPolicies : chính sách lương → số ngày công chuẩn, hệ số OT.
-            // deductionPolicies: chính sách giảm trừ → tỷ lệ BH, giảm trừ cá nhân/phụ thuộc.
-            // taxProfiles    : hồ sơ thuế từng nhân viên → số người phụ thuộc.
-            // taxBrackets    : biểu thuế lũy tiến TNCN.
+            // salaryPolicy   : chính sách lương hiệu lực tại đầu kỳ.
+            // deductionPolicy: chính sách giảm trừ/bảo hiểm hiệu lực tại đầu kỳ.
+            // taxProfiles    : hồ sơ thuế hiệu lực theo từng nhân viên tại cuối kỳ.
+            // effectiveTaxBrackets: biểu thuế lũy tiến hiệu lực tại đầu kỳ.
             // allPayrollItems: item hiện có của các payroll → dùng để xóa trước khi tạo lại.
             var contracts = await _contractRepository.GetEffectiveByEmployeesAsync(
                 employeeIds,
@@ -212,10 +212,10 @@ namespace MISA.QLSX.Core.Services
                 periodStart,
                 periodEnd
             );
-            var salaryPolicies = await _salaryPolicyRepository.GetAllAsync();
-            var deductionPolicies = await _deductionPolicyRepository.GetAllAsync();
-            var taxProfiles = await _employeeTaxProfileRepository.GetAllAsync();
-            var taxBrackets = await _taxBracketRepository.GetAllAsync();
+            var salaryPolicy = await _salaryPolicyRepository.GetEffectiveAtAsync(periodStart);
+            var deductionPolicy = await _deductionPolicyRepository.GetEffectiveAtAsync(periodStart);
+            var taxProfiles = await _employeeTaxProfileRepository.GetEffectiveByEmployeesAsync(employeeIds, periodEnd);
+            var effectiveTaxBrackets = await _taxBracketRepository.GetEffectiveAtAsync(periodStart);
             var allPayrollItems = await _payrollItemRepository.GetByPayrollIdsAsync(payrollIds);
 
             // ----------------------------------------------------------------
@@ -225,9 +225,6 @@ namespace MISA.QLSX.Core.Services
             // salaryPolicy      : cấu hình số ngày công chuẩn và hệ số làm thêm giờ.
             // deductionPolicy   : tỷ lệ BHXH/BHYT/BHTN và mức giảm trừ gia cảnh/bản thân.
             // effectiveTaxBrackets: danh sách bậc thuế đang hiệu lực, đã sắp theo lowerBound tăng dần.
-            var salaryPolicy = GetEffectiveSalaryPolicy(salaryPolicies, periodStart);
-            var deductionPolicy = GetEffectiveDeductionPolicy(deductionPolicies, periodStart);
-            var effectiveTaxBrackets = GetEffectiveTaxBrackets(taxBrackets, periodStart);
 
             // affected: đếm số payroll được tính thành công trong lần gọi này.
             var affected = 0;
@@ -362,9 +359,6 @@ namespace MISA.QLSX.Core.Services
                 //   Nếu null → dependentCount mặc định = 0 (không có người phụ thuộc).
                 var employeeTaxProfile = taxProfiles
                     .Where(p => p.EmployeeId == payroll.EmployeeId)
-                    .Where(p => p.EffectiveFrom != null && p.EffectiveFrom.Value.Date <= periodEnd)
-                    .Where(p => p.EffectiveTo == null || p.EffectiveTo.Value.Date >= periodEnd)
-                    .Where(p => p.IsActive == null || p.IsActive == true)
                     .OrderByDescending(p => p.EffectiveFrom)
                     .FirstOrDefault();
 
@@ -432,16 +426,38 @@ namespace MISA.QLSX.Core.Services
             if (!string.Equals(period.Status, "draft", StringComparison.OrdinalIgnoreCase))
                 throw new ValidateException("Salary period invalid status", "Chỉ được khóa khi kỳ lương đang ở trạng thái draft");
 
-            var payrolls = (await _payrollRepository.GetAllAsync())
-                .Where(p => p.SalaryPeriodId == salaryPeriodId)
+            if (period.StartDate == null || period.EndDate == null)
+                throw new ValidateException("Salary period date invalid", "Kỳ lương thiếu ngày bắt đầu hoặc kết thúc");
+
+            var payrolls = await _payrollRepository.GetBySalaryPeriodAsync(salaryPeriodId);
+
+            var payrollIds = payrolls
+                .Where(p => p.PayrollId != null)
+                .Select(p => p.PayrollId!.Value)
+                .Distinct()
                 .ToList();
 
-            var allPayrollItems = await _payrollItemRepository.GetAllAsync();
-            var allContracts = await _contractRepository.GetAllAsync();
-            var salaryPolicies = await _salaryPolicyRepository.GetAllAsync();
-            var deductionPolicies = await _deductionPolicyRepository.GetAllAsync();
-            var taxProfiles = await _employeeTaxProfileRepository.GetAllAsync();
-            var allSnapshots = await _payrollSnapshotRepository.GetAllAsync();
+            var employeeIds = payrolls
+                .Where(p => p.EmployeeId != null)
+                .Select(p => p.EmployeeId!.Value)
+                .Distinct()
+                .ToList();
+
+            var allPayrollItems = await _payrollItemRepository.GetByPayrollIdsAsync(payrollIds);
+            var allContracts = await _contractRepository.GetEffectiveByEmployeesAsync(
+                employeeIds,
+                period.StartDate.Value.Date,
+                period.EndDate.Value.Date
+            );
+            var salaryPolicy = await _salaryPolicyRepository.GetEffectiveAtAsync(period.StartDate.Value.Date);
+            var deductionPolicy = await _deductionPolicyRepository.GetEffectiveAtAsync(period.StartDate.Value.Date);
+            var taxProfiles = await _employeeTaxProfileRepository.GetEffectiveByEmployeesAsync(employeeIds, period.EndDate.Value.Date);
+            var allSnapshots = await _payrollSnapshotRepository.GetByPayrollIdsAsync(payrollIds);
+
+            var taxProfileByEmployee = taxProfiles
+                .Where(p => p.EmployeeId != null)
+                .GroupBy(p => p.EmployeeId!.Value)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.EffectiveFrom).First());
 
             if (payrolls.Count == 0)
                 throw new ValidateException("Payroll not found", "Không có bảng lương để khóa trong kỳ đã chọn");
@@ -463,9 +479,9 @@ namespace MISA.QLSX.Core.Services
                     payroll,
                     allPayrollItems,
                     allContracts,
-                    salaryPolicies,
-                    deductionPolicies,
-                    taxProfiles,
+                    salaryPolicy,
+                    deductionPolicy,
+                    taxProfileByEmployee,
                     allSnapshots,
                     now
                 );
@@ -488,9 +504,7 @@ namespace MISA.QLSX.Core.Services
             if (!string.Equals(period.Status, "locked", StringComparison.OrdinalIgnoreCase))
                 throw new ValidateException("Salary period invalid status", "Chỉ được đánh dấu chi trả khi kỳ lương đang ở trạng thái locked");
 
-            var payrolls = (await _payrollRepository.GetAllAsync())
-                .Where(p => p.SalaryPeriodId == salaryPeriodId)
-                .ToList();
+            var payrolls = await _payrollRepository.GetBySalaryPeriodAsync(salaryPeriodId);
 
             if (payrolls.Count == 0)
                 throw new ValidateException("Payroll not found", "Không có bảng lương để chi trả trong kỳ đã chọn");
@@ -516,6 +530,12 @@ namespace MISA.QLSX.Core.Services
             return affected;
         }
 
+        /// <summary>
+        /// Thiết lập metadata mặc định trước khi lưu bảng lương.
+        /// </summary>
+        /// <param name="entity">Đối tượng bảng lương cần lưu.</param>
+        /// <param name="isUpdate">Xác định thao tác hiện tại là cập nhật hay tạo mới.</param>
+        /// <returns>Task bất đồng bộ hoàn thành ngay sau khi gán metadata.</returns>
         protected override Task BeforeSaveAsync(Payroll entity, bool isUpdate = false)
         {
             if (!isUpdate)
@@ -526,6 +546,13 @@ namespace MISA.QLSX.Core.Services
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Kiểm tra tính hợp lệ dữ liệu bảng lương trước khi ghi xuống cơ sở dữ liệu.
+        /// </summary>
+        /// <param name="entity">Đối tượng bảng lương cần kiểm tra.</param>
+        /// <param name="ignoreId">ID cần bỏ qua khi kiểm tra trùng mã trong trường hợp cập nhật.</param>
+        /// <returns>Task bất đồng bộ hoàn thành khi dữ liệu hợp lệ.</returns>
+        /// <exception cref="ValidateException">Ném ra khi dữ liệu đầu vào không hợp lệ hoặc vi phạm ràng buộc nghiệp vụ.</exception>
         protected override async Task ValidateAsync(Payroll entity, Guid? ignoreId = null)
         {
             if (entity == null)
@@ -597,56 +624,6 @@ namespace MISA.QLSX.Core.Services
             }
 
             return count;
-        }
-
-        /// <summary>
-        /// Lấy chính sách lương hiệu lực tại một thời điểm.
-        /// Ưu tiên bản ghi có EffectiveFrom gần nhất và còn trong khoảng hiệu lực.
-        /// </summary>
-        /// <param name="policies">Danh sách chính sách lương.</param>
-        /// <param name="atDate">Thời điểm cần tra cứu hiệu lực.</param>
-        /// <returns>Chính sách lương phù hợp; null nếu không tìm thấy.</returns>
-        private static SalaryPolicy? GetEffectiveSalaryPolicy(List<SalaryPolicy> policies, DateTime atDate)
-        {
-            return policies
-                .Where(p => p.IsActive == null || p.IsActive == true)
-                .Where(p => p.EffectiveFrom != null && p.EffectiveFrom.Value.Date <= atDate)
-                .Where(p => p.EffectiveTo == null || p.EffectiveTo.Value.Date >= atDate)
-                .OrderByDescending(p => p.EffectiveFrom)
-                .FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Lấy chính sách giảm trừ/bảo hiểm hiệu lực tại một thời điểm.
-        /// Ưu tiên bản ghi có EffectiveFrom gần nhất và còn trong khoảng hiệu lực.
-        /// </summary>
-        /// <param name="policies">Danh sách chính sách giảm trừ/bảo hiểm.</param>
-        /// <param name="atDate">Thời điểm cần tra cứu hiệu lực.</param>
-        /// <returns>Chính sách giảm trừ phù hợp; null nếu không tìm thấy.</returns>
-        private static DeductionPolicy? GetEffectiveDeductionPolicy(List<DeductionPolicy> policies, DateTime atDate)
-        {
-            return policies
-                .Where(p => p.IsActive == null || p.IsActive == true)
-                .Where(p => p.EffectiveFrom != null && p.EffectiveFrom.Value.Date <= atDate)
-                .Where(p => p.EffectiveTo == null || p.EffectiveTo.Value.Date >= atDate)
-                .OrderByDescending(p => p.EffectiveFrom)
-                .FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Lấy danh sách bậc thuế hiệu lực tại một thời điểm và sắp theo cận dưới tăng dần.
-        /// </summary>
-        /// <param name="brackets">Danh sách bậc thuế.</param>
-        /// <param name="atDate">Thời điểm cần tra cứu hiệu lực.</param>
-        /// <returns>Danh sách bậc thuế đang hiệu lực tại thời điểm chỉ định.</returns>
-        private static List<TaxBracket> GetEffectiveTaxBrackets(List<TaxBracket> brackets, DateTime atDate)
-        {
-            return brackets
-                .Where(b => b.IsActive == null || b.IsActive == true)
-                .Where(b => b.EffectiveFrom != null && b.EffectiveFrom.Value.Date <= atDate)
-                .Where(b => b.EffectiveTo == null || b.EffectiveTo.Value.Date >= atDate)
-                .OrderBy(b => b.LowerBound)
-                .ToList();
         }
 
         /// <summary>
@@ -834,9 +811,9 @@ namespace MISA.QLSX.Core.Services
             Payroll payroll,
             List<PayrollItem> allPayrollItems,
             List<Contract> allContracts,
-            List<SalaryPolicy> salaryPolicies,
-            List<DeductionPolicy> deductionPolicies,
-            List<EmployeeTaxProfile> taxProfiles,
+            SalaryPolicy? salaryPolicy,
+            DeductionPolicy? deductionPolicy,
+            Dictionary<Guid, EmployeeTaxProfile> taxProfiles,
             List<PayrollSnapshot> allSnapshots,
             DateTime snapshotAt
         )
@@ -854,9 +831,9 @@ namespace MISA.QLSX.Core.Services
 
             var relatedItems = allPayrollItems.Where(i => i.PayrollId == payroll.PayrollId).ToList();
             var relatedContracts = allContracts.Where(c => c.EmployeeId == payroll.EmployeeId).ToList();
-            var salaryPolicy = salaryPolicies.FirstOrDefault(p => p.PolicyId == payroll.SalaryPolicyId);
-            var deductionPolicy = deductionPolicies.FirstOrDefault(p => p.DeductionPolicyId == payroll.DeductionPolicyId);
-            var taxProfile = taxProfiles.FirstOrDefault(p => p.EmployeeTaxProfileId == payroll.EmployeeTaxProfileId);
+            var taxProfile = payroll.EmployeeId != null && taxProfiles.TryGetValue(payroll.EmployeeId.Value, out var profile)
+                ? profile
+                : null;
 
             var snapshot = new PayrollSnapshot
             {
