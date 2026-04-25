@@ -3,6 +3,34 @@
   "WorkspaceRootPath": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\services\\payrollservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\services\\payrollservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.api\\controllers\\payrollscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\controllers\\payrollscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\services\\taxbracketservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\services\\taxbracketservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\services\\shiftservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\services\\shiftservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\entities\\taxbracket.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\entities\\taxbracket.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.api\\controllers\\deductionpoliciescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\controllers\\deductionpoliciescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.api\\controllers\\contracttemplatescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\controllers\\contracttemplatescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.infrastructure\\repositories\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{6EAE6CD0-D870-41C5-859A-DE9C2B58264B}|MISA.QLSX.Infrastructure\\MISA.QLSX.Infrastructure.csproj|solutionrelative:misa.qlsx.infrastructure\\repositories\\baserepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -23,10 +51,6 @@
       "RelativeMoniker": "D:0:0:{BCA1ADAA-E501-48E1-807C-F5B39C6DD51A}|MISA.QLSX.Api\\MISA.QLSX.Api.csproj|solutionrelative:misa.qlsx.api\\controllers\\basecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\services\\shiftservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\services\\shiftservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|d:\\fw-misa-2026\\btl_cuoikhoa\\misa.qlsx.be\\misa.qlsx.core\\services\\baseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{93CB3BA7-4D1F-4B64-BC9E-441EEE5B605D}|MISA.QLSX.Core\\MISA.QLSX.Core.csproj|solutionrelative:misa.qlsx.core\\services\\baseservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -42,11 +66,89 @@
       "DocumentGroups": [
         {
           "DockedHeight": 249,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "PayrollService.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\PayrollService.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Services\\PayrollService.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\PayrollService.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Services\\PayrollService.cs",
+              "ViewState": "AgIAAIQAAAAAAAAAAAAcwKEAAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-25T02:29:21.971Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PayrollsController.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\PayrollsController.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Api\\Controllers\\PayrollsController.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\PayrollsController.cs",
+              "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\PayrollsController.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAswBAAAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-21T17:16:16.635Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "TaxBracketService.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\TaxBracketService.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Services\\TaxBracketService.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\TaxBracketService.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Services\\TaxBracketService.cs",
+              "ViewState": "AgIAABQAAAAAAAAAAAAswAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-21T16:35:10.043Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "TaxBracket.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Entities\\TaxBracket.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Core\\Entities\\TaxBracket.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Entities\\TaxBracket.cs",
+              "RelativeToolTip": "MISA.QLSX.Core\\Entities\\TaxBracket.cs",
+              "ViewState": "AgIAABgAAAAAAAAAAAAYwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-21T16:35:01.272Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "DeductionPoliciesController.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\DeductionPoliciesController.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Api\\Controllers\\DeductionPoliciesController.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\DeductionPoliciesController.cs",
+              "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\DeductionPoliciesController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-21T16:34:55.71Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ContractTemplatesController.cs",
+              "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\ContractTemplatesController.cs",
+              "RelativeDocumentMoniker": "MISA.QLSX.Api\\Controllers\\ContractTemplatesController.cs",
+              "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\ContractTemplatesController.cs",
+              "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\ContractTemplatesController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-21T16:34:52.787Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "EmployeeRepository.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
@@ -54,11 +156,12 @@
               "RelativeToolTip": "MISA.QLSX.Infrastructure\\Repositories\\EmployeeRepository.cs",
               "ViewState": "AgIAAA8AAAAAAAAAAAAswIQAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T14:05:41.987Z"
+              "WhenOpened": "2026-04-19T14:05:41.987Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 8,
               "Title": "Employee.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Entities\\Employee.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Core\\Entities\\Employee.cs",
@@ -71,19 +174,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 3,
               "Title": "ShiftService.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\ShiftService.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Core\\Services\\ShiftService.cs",
               "ToolTip": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\ShiftService.cs",
               "RelativeToolTip": "MISA.QLSX.Core\\Services\\ShiftService.cs",
-              "ViewState": "AgIAAHoAAAAAAAAAAIAwwI0AAAArAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACQAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T11:41:28.014Z"
+              "WhenOpened": "2026-04-19T11:41:28.014Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 12,
               "Title": "BaseService.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Services\\BaseService.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Core\\Services\\BaseService.cs",
@@ -91,11 +195,12 @@
               "RelativeToolTip": "MISA.QLSX.Core\\Services\\BaseService.cs",
               "ViewState": "AgIAAE8AAAAAAAAAAAAMwF0AAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T10:42:35.769Z"
+              "WhenOpened": "2026-04-19T10:42:35.769Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 7,
               "Title": "BaseRepository.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Infrastructure\\Repositories\\BaseRepository.cs",
@@ -108,7 +213,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 11,
               "Title": "BaseController.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\BaseController.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Api\\Controllers\\BaseController.cs",
@@ -116,11 +221,12 @@
               "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\BaseController.cs",
               "ViewState": "AgIAAFkAAAAAAAAAAAAnwGQAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T10:47:23.467Z"
+              "WhenOpened": "2026-04-19T10:47:23.467Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 13,
               "Title": "ShiftsController.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Api\\Controllers\\ShiftsController.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Api\\Controllers\\ShiftsController.cs",
@@ -128,11 +234,12 @@
               "RelativeToolTip": "MISA.QLSX.Api\\Controllers\\ShiftsController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T10:43:08.078Z"
+              "WhenOpened": "2026-04-19T10:43:08.078Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 10,
               "Title": "Shift.cs",
               "DocumentMoniker": "D:\\FW-Misa-2026\\BTL_CuoiKhoa\\MISA.QLSX.BE\\MISA.QLSX.Core\\Entities\\Shift.cs",
               "RelativeDocumentMoniker": "MISA.QLSX.Core\\Entities\\Shift.cs",
@@ -140,7 +247,8 @@
               "RelativeToolTip": "MISA.QLSX.Core\\Entities\\Shift.cs",
               "ViewState": "AgIAAFEAAAAAAAAAAAAcwFgAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-19T10:41:44.375Z"
+              "WhenOpened": "2026-04-19T10:41:44.375Z",
+              "EditorCaption": ""
             }
           ]
         }

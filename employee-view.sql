@@ -15,6 +15,7 @@ SELECT
   e.`phone_number`,
   e.`email`,
   e.`join_date`,
+  e.`contract_id`,
   e.`national_id`,
   e.`avatar_url`,
   d.`department_name`,

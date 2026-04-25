@@ -71,8 +71,23 @@ namespace MISA.QLSX.Core.Services
             if (period.StartDate == null || period.EndDate == null)
                 throw new ValidateException("Salary period date invalid", "Kỳ lương thiếu ngày bắt đầu hoặc kết thúc");
 
+            var periodStart = period.StartDate.Value.Date;
+            var periodEnd = period.EndDate.Value.Date;
             var employees = await _employeeRepository.GetAllAsync();
             var existingPayrolls = await _payrollRepository.GetBySalaryPeriodAsync(salaryPeriodId);
+
+            var employeeIds = employees
+                .Where(e => e.EmployeeId != null)
+                .Select(e => e.EmployeeId!.Value)
+                .Distinct()
+                .ToList();
+
+            var effectiveContracts = await _contractRepository.GetEffectiveByEmployeesAsync(employeeIds, periodStart, periodEnd);
+            var eligibleEmployeeIds = effectiveContracts
+                .Where(IsContractEligibleForPayroll)
+                .Where(c => c.EmployeeId != null)
+                .Select(c => c.EmployeeId!.Value)
+                .ToHashSet();
 
             // Loại trừ nhân viên đã có payroll trong kỳ để đảm bảo idempotent khi generate nhiều lần.
             var existingEmployeeIds = existingPayrolls
@@ -83,7 +98,7 @@ namespace MISA.QLSX.Core.Services
             var targetEmployees = employees
                 .Where(e =>
                     e.EmployeeId != null
-                    && e.ContractId != null
+                    && eligibleEmployeeIds.Contains(e.EmployeeId.Value)
                     && (e.JoinDate == null || e.JoinDate.Value.Date <= period.EndDate.Value.Date)
                     && !existingEmployeeIds.Contains(e.EmployeeId.Value)
                 )
@@ -253,10 +268,7 @@ namespace MISA.QLSX.Core.Services
                     .Where(c => c.EffectiveDate != null)
                     .Where(c => c.EffectiveDate!.Value.Date <= periodEnd)
                     .Where(c => c.EndDate == null || c.EndDate.Value.Date >= periodStart)
-                    .Where(c => string.IsNullOrWhiteSpace(c.ContractStatus)
-                        || string.Equals(c.ContractStatus, "active", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(c.ContractStatus, "signed", StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(c.ContractStatus, "draft", StringComparison.OrdinalIgnoreCase))
+                    .Where(IsContractEligibleForPayroll)
                     .OrderBy(c => c.EffectiveDate)
                     .ToList();
 
@@ -326,19 +338,28 @@ namespace MISA.QLSX.Core.Services
                 //                  Sẽ được cộng thêm overtimeAddition ở cuối bước này.
                 // totalDeduction : tổng phát sinh trừ từ chấm công (phạt).
                 // overtimeHours  : tổng giờ làm thêm trong kỳ.
-                var totalAddition = attendanceRows.Sum(a => a.BonusAmount ?? 0m);
-                var totalDeduction = attendanceRows.Sum(a => a.PenaltyAmount ?? 0m);
-                var overtimeHours = attendanceRows.Sum(a => a.OvertimeHours ?? 0m);
+                var hourlySalary = contractBusinessDaysTotal > 0 ? baseSalaryAmount / (contractBusinessDaysTotal * 8m) : 0m;
+                var overtimeMultiplier = salaryPolicy?.OvertimeMultiplierWeekday ?? 1.5m;
+                var attendanceBreakdowns = attendanceRows
+                    .Where(a => a.AttendanceId != null)
+                    .Select(a =>
+                    {
+                        var bonusAmount = a.BonusAmount ?? 0m;
+                        var penaltyAmount = a.PenaltyAmount ?? 0m;
+                        var overtimeAmount = (a.OvertimeHours ?? 0m) * hourlySalary * overtimeMultiplier;
+                        return new AttendanceBreakdown(a.AttendanceId!.Value, bonusAmount, penaltyAmount, overtimeAmount);
+                    })
+                    .ToList();
+
+                var overtimeAddition = attendanceBreakdowns.Sum(a => a.OvertimeAmount);
+                var totalAddition = attendanceBreakdowns.Sum(a => a.BonusAmount) + overtimeAddition;
+                var totalDeduction = attendanceBreakdowns.Sum(a => a.PenaltyAmount);
 
                 // hourlySalary: đơn giá giờ = baseSalaryAmount / (số ngày hợp đồng thực tế * 8h/ngày).
                 //   Dùng contractBusinessDaysTotal (ngày thực tế hiệu lực) thay vì standardWorkdays
                 //   để tránh làm giảm đơn giá overtime khi nhân viên mới vào hoặc nghỉ giữa tháng.
                 // overtimeAddition: tiền làm thêm = giờ OT * đơn giá giờ * hệ số OT ngày thường.
                 //   OvertimeMultiplierWeekday mặc định 1.5 nếu policy không khai.
-                var hourlySalary = contractBusinessDaysTotal > 0 ? baseSalaryAmount / (contractBusinessDaysTotal * 8m) : 0m;
-                var overtimeAddition = overtimeHours * hourlySalary * (salaryPolicy?.OvertimeMultiplierWeekday ?? 1.5m);
-
-                totalAddition += overtimeAddition;
 
                 // totalAllowance: phụ cấp cố định (tạm = 0; chưa tích hợp contract_allowance).
                 // grossSalary   : lương gộp = baseSalary + allowance + addition - deduction.
@@ -406,10 +427,17 @@ namespace MISA.QLSX.Core.Services
                 // BƯỚC 10: Lưu vào DB và đồng bộ lại payroll item
                 // ----------------------------------------------------------------
                 // UpdateAsync     : lưu lại bản ghi payroll tổng hợp vừa tính.
-                // ReplacePayrollItemsAsync: xóa item cũ, tạo lại 3 item chuẩn:
-                //   BASE → lương gộp, INS → khấu trừ bảo hiểm, TAX → thuế TNCN.
+                // ReplacePayrollItemsAsync: xóa item cũ và tạo lại item chi tiết theo từng nguồn phát sinh.
                 await _payrollRepository.UpdateAsync(payroll.PayrollId!.Value, payroll);
-                await ReplacePayrollItemsAsync(payroll, allPayrollItems);
+                await ReplacePayrollItemsAsync(
+                    payroll,
+                    allPayrollItems,
+                    baseSalaryAmount,
+                    totalAllowance,
+                    insuranceDeduction,
+                    pitTaxAmount,
+                    attendanceBreakdowns
+                );
                 affected++;
             }
 
@@ -531,6 +559,29 @@ namespace MISA.QLSX.Core.Services
         }
 
         /// <summary>
+        /// Cập nhật bảng lương theo ID, chặn chỉnh sửa khi bảng lương đã khóa hoặc đã chi trả.
+        /// </summary>
+        /// <param name="id">ID bảng lương cần cập nhật.</param>
+        /// <param name="entity">Dữ liệu bảng lương cập nhật.</param>
+        /// <returns>ID bảng lương đã cập nhật.</returns>
+        public override async Task<Guid> UpdateAsync(Guid id, Payroll entity)
+        {
+            await EnsurePayrollEditableAsync(id);
+            return await base.UpdateAsync(id, entity);
+        }
+
+        /// <summary>
+        /// Xóa bảng lương theo ID, chặn xóa khi bảng lương đã khóa hoặc đã chi trả.
+        /// </summary>
+        /// <param name="id">ID bảng lương cần xóa.</param>
+        /// <returns>Số bản ghi đã xóa.</returns>
+        public override async Task<int> DeleteAsync(Guid id)
+        {
+            await EnsurePayrollEditableAsync(id);
+            return await base.DeleteAsync(id);
+        }
+
+        /// <summary>
         /// Thiết lập metadata mặc định trước khi lưu bảng lương.
         /// </summary>
         /// <param name="entity">Đối tượng bảng lương cần lưu.</param>
@@ -593,6 +644,37 @@ namespace MISA.QLSX.Core.Services
                 throw new NotFoundException("Salary period not found", "Không tìm thấy kỳ lương");
 
             return period;
+        }
+
+        /// <summary>
+        /// Kiểm tra bảng lương có thể chỉnh sửa/xóa hay không.
+        /// </summary>
+        /// <param name="payrollId">ID bảng lương cần kiểm tra.</param>
+        /// <returns>Task hoàn thành khi bảng lương còn editable.</returns>
+        private async Task EnsurePayrollEditableAsync(Guid payrollId)
+        {
+            var current = await _payrollRepository.GetById(payrollId);
+            if (current == null)
+                throw new NotFoundException("Payroll not found", "Không tìm thấy bảng lương");
+
+            if (string.Equals(current.Status, "locked", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(current.Status, "paid", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidateException("Payroll status invalid", "Bảng lương đã khóa hoặc đã chi trả, không được phép chỉnh sửa");
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra hợp đồng có đủ điều kiện tham gia tính lương hay không.
+        /// Điều kiện: đã ký (is_signed=true), có signed_at và contract_status=active.
+        /// </summary>
+        /// <param name="contract">Hợp đồng cần kiểm tra.</param>
+        /// <returns>True nếu đủ điều kiện tính lương, ngược lại False.</returns>
+        private static bool IsContractEligibleForPayroll(Contract contract)
+        {
+            return contract.IsSigned == true
+                && contract.SignedAt != null
+                && string.Equals(contract.ContractStatus, "active", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -713,7 +795,15 @@ namespace MISA.QLSX.Core.Services
         /// <param name="payroll">Bảng lương tổng đã được tính toán.</param>
         /// <param name="allExistingItems">Danh sách payroll item hiện có trong hệ thống.</param>
         /// <returns>Task bất đồng bộ.</returns>
-        private async Task ReplacePayrollItemsAsync(Payroll payroll, List<PayrollItem> allExistingItems)
+        private async Task ReplacePayrollItemsAsync(
+            Payroll payroll,
+            List<PayrollItem> allExistingItems,
+            decimal baseSalaryAmount,
+            decimal totalAllowance,
+            decimal insuranceDeduction,
+            decimal pitTaxAmount,
+            List<AttendanceBreakdown> attendanceBreakdowns
+        )
         {
             if (payroll.PayrollId == null || payroll.PayrollCode == null)
                 return;
@@ -738,44 +828,125 @@ namespace MISA.QLSX.Core.Services
                     ItemType = "addition",
                     ItemName = "Lương cơ bản",
                     FormulaComponent = "base_salary",
-                    Amount = RoundMoney(payroll.GrossSalary ?? 0m),
+                    Amount = RoundMoney(baseSalaryAmount),
                     SourceTable = "manual",
                     SourceId = null,
-                    Note = "Khoản lương tổng hợp theo kỳ",
+                    Note = "Lương cơ bản theo hợp đồng hiệu lực",
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now,
                 },
-                new()
-                {
-                    PayrollItemId = Guid.NewGuid(),
-                    PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "INS"),
-                    PayrollId = payroll.PayrollId,
-                    ItemType = "deduction",
-                    ItemName = "Khấu trừ bảo hiểm",
-                    FormulaComponent = "insurance",
-                    Amount = RoundMoney(payroll.InsuranceDeduction ?? 0m),
-                    SourceTable = "manual",
-                    SourceId = null,
-                    Note = "Khấu trừ bảo hiểm theo policy",
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
-                },
-                new()
-                {
-                    PayrollItemId = Guid.NewGuid(),
-                    PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "TAX"),
-                    PayrollId = payroll.PayrollId,
-                    ItemType = "deduction",
-                    ItemName = "Thuế thu nhập cá nhân",
-                    FormulaComponent = "tax",
-                    Amount = RoundMoney(payroll.PitTaxAmount ?? 0m),
-                    SourceTable = "manual",
-                    SourceId = null,
-                    Note = "Thuế TNCN theo bậc lũy tiến",
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
-                }
             };
+
+            if (totalAllowance > 0)
+            {
+                items.Add(new PayrollItem
+                {
+                    PayrollItemId = Guid.NewGuid(),
+                    PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "ALLW"),
+                    PayrollId = payroll.PayrollId,
+                    ItemType = "addition",
+                    ItemName = "Phụ cấp cố định",
+                    FormulaComponent = "allowance",
+                    Amount = RoundMoney(totalAllowance),
+                    SourceTable = "manual",
+                    SourceId = null,
+                    Note = "Phụ cấp áp dụng theo kỳ",
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now,
+                });
+            }
+
+            foreach (var attendance in attendanceBreakdowns)
+            {
+                if (attendance.BonusAmount > 0)
+                {
+                    items.Add(new PayrollItem
+                    {
+                        PayrollItemId = Guid.NewGuid(),
+                        PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "BONUS"),
+                        PayrollId = payroll.PayrollId,
+                        ItemType = "addition",
+                        ItemName = "Thưởng chấm công",
+                        FormulaComponent = "bonus",
+                        Amount = RoundMoney(attendance.BonusAmount),
+                        SourceTable = "attendance",
+                        SourceId = attendance.AttendanceId,
+                        Note = "Khoản cộng phát sinh từ chấm công",
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                    });
+                }
+
+                if (attendance.OvertimeAmount > 0)
+                {
+                    items.Add(new PayrollItem
+                    {
+                        PayrollItemId = Guid.NewGuid(),
+                        PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "OT"),
+                        PayrollId = payroll.PayrollId,
+                        ItemType = "addition",
+                        ItemName = "Tiền làm thêm giờ",
+                        FormulaComponent = "other",
+                        Amount = RoundMoney(attendance.OvertimeAmount),
+                        SourceTable = "attendance",
+                        SourceId = attendance.AttendanceId,
+                        Note = "Khoản cộng từ giờ làm thêm",
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                    });
+                }
+
+                if (attendance.PenaltyAmount > 0)
+                {
+                    items.Add(new PayrollItem
+                    {
+                        PayrollItemId = Guid.NewGuid(),
+                        PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "PEN"),
+                        PayrollId = payroll.PayrollId,
+                        ItemType = "deduction",
+                        ItemName = "Phạt chấm công",
+                        FormulaComponent = "penalty",
+                        Amount = RoundMoney(attendance.PenaltyAmount),
+                        SourceTable = "attendance",
+                        SourceId = attendance.AttendanceId,
+                        Note = "Khoản trừ phát sinh từ chấm công",
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                    });
+                }
+            }
+
+            items.Add(new PayrollItem
+            {
+                PayrollItemId = Guid.NewGuid(),
+                PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "INS"),
+                PayrollId = payroll.PayrollId,
+                ItemType = "deduction",
+                ItemName = "Khấu trừ bảo hiểm",
+                FormulaComponent = "insurance",
+                Amount = RoundMoney(insuranceDeduction),
+                SourceTable = "manual",
+                SourceId = null,
+                Note = "Khấu trừ bảo hiểm theo policy",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            });
+
+            items.Add(new PayrollItem
+            {
+                PayrollItemId = Guid.NewGuid(),
+                PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "TAX"),
+                PayrollId = payroll.PayrollId,
+                ItemType = "deduction",
+                ItemName = "Thuế thu nhập cá nhân",
+                FormulaComponent = "tax",
+                Amount = RoundMoney(pitTaxAmount),
+                SourceTable = "manual",
+                SourceId = null,
+                Note = "Thuế TNCN theo bậc lũy tiến",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+            });
 
             foreach (var item in items)
             {
@@ -850,6 +1021,8 @@ namespace MISA.QLSX.Core.Services
 
             await _payrollSnapshotRepository.InsertAsync(snapshot);
         }
+
+        private record AttendanceBreakdown(Guid AttendanceId, decimal BonusAmount, decimal PenaltyAmount, decimal OvertimeAmount);
 
         private record ContractSegment(Contract Contract, DateTime StartDate, DateTime EndDate);
     }
