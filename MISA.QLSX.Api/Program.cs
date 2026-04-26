@@ -23,6 +23,7 @@ builder.Services.AddSingleton<MySqlConnectionFactory>(new MySqlConnectionFactory
 // Đăng ký Repository
 builder.Services.AddScoped<IShiftRepository, ShiftRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IContractTemplateRepository, ContractTemplateRepository>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<ISalaryPolicyRepository, SalaryPolicyRepository>();
@@ -34,10 +35,14 @@ builder.Services.AddScoped<IPayrollRepository, PayrollRepository>();
 builder.Services.AddScoped<IPayrollItemRepository, PayrollItemRepository>();
 builder.Services.AddScoped<IPayrollSnapshotRepository, PayrollSnapshotRepository>();
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+builder.Services.AddScoped<IAllowanceRepository, AllowanceRepository>();
+builder.Services.AddScoped<IBusinessTripRepository, BusinessTripRepository>();
+builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
 
 // Đăng ký Service
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IContractTemplateService, ContractTemplateService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<ISalaryPolicyService, SalaryPolicyService>();
@@ -48,15 +53,32 @@ builder.Services.AddScoped<ISalaryPeriodService, SalaryPeriodService>();
 builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddScoped<IPayrollItemService, PayrollItemService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<IAllowanceService, AllowanceService>();
+builder.Services.AddScoped<IBusinessTripService, BusinessTripService>();
+builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 
-//Cho phép gọi api không cần ktra
+//Thêm Distributed Memory Cache và Session
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
+//Cho phép gọi api từ localhost:5173 với credentials
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
-        "AllowAll",
+        "AllowLocalhost5173",
         policy =>
         {
-            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
         }
     );
 });
@@ -72,10 +94,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAll");
+app.UseCors("AllowLocalhost5173");
 app.UseMiddleware<ValidateExceptionMiddleware>();
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthorization();
 

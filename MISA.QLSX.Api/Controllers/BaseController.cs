@@ -146,7 +146,7 @@ namespace MISA.QLSX.Api.Controllers
         /// <returns>Đối tượng PagingResponse chứa danh sách dữ liệu và thông tin meta</returns>
         /// Created by TMHieu - 7/12/2025
         [HttpPost("paging")]
-        public async Task<PagingResponse<T>> GetPaging([FromBody] QueryRequest request)
+        public virtual async Task<PagingResponse<T>> GetPaging([FromBody] QueryRequest request)
         {
             return await _service.QueryPagingAsync(request);
         }
@@ -176,7 +176,7 @@ namespace MISA.QLSX.Api.Controllers
         /// đã loại bỏ các bản ghi nằm trong excludeIds.
         /// </returns>
         [HttpPost("query-all")]
-        public async Task<PagingResponse<T>> QueryAll(
+        public virtual async Task<PagingResponse<T>> QueryAll(
             [FromQuery] string? search = null,
             [FromQuery] string? type = null,
             [FromBody] List<Guid>? excludeIds = null

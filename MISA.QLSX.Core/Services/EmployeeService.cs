@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Core.Exceptions;
 using MISA.QLSX.Core.Interfaces.Repository;
@@ -72,6 +74,16 @@ namespace MISA.QLSX.Core.Services
 
             if (await _employeeRepository.IsValueExistAsync(nameof(Employee.EmployeeCode), employee.EmployeeCode, ignoreId))
                 throw new ValidateException("EmployeeCode duplicate", "Mã nhân viên đã tồn tại");
+        }
+
+        /// <summary>
+        /// Lấy danh sách nhân viên chưa được gán hợp đồng.
+        /// </summary>
+        /// <returns>Danh sách nhân viên có ContractId = null.</returns>
+        public async Task<List<Employee>> GetEmployeesWithoutContractAsync()
+        {
+            var employees = await GetAllAsync();
+            return employees.Where(employee => employee.ContractId == null).ToList();
         }
     }
 }

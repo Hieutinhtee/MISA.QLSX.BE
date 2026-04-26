@@ -42,6 +42,12 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     DataType = typeof(string),
                     Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
+                ["employeeId"] = new()
+                {
+                    Column = "employee_id",
+                    DataType = typeof(Guid),
+                    Operators = new() { "eq", "neq", "isnull", "notnull" },
+                },
                 ["fullName"] = new()
                 {
                     Column = "full_name",
@@ -89,6 +95,12 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     Column = "department_name",
                     DataType = typeof(string),
                     Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
+                },
+                ["departmentId"] = new()
+                {
+                    Column = "department_id",
+                    DataType = typeof(Guid),
+                    Operators = new() { "eq", "neq", "isnull", "notnull" },
                 },
                 ["shiftName"] = new()
                 {

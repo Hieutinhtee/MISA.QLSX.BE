@@ -59,6 +59,16 @@ public class ValidateExceptionMiddleware
             // Xử lý lỗi trùng lặp: Trả về 409 Conflict
             await HandleExceptionAsync(context, 409, "Dữ liệu bị trùng", ex);
         }
+        catch (UnauthorizedException ex)
+        {
+            // Xử lý lỗi chưa đăng nhập/xác thực thất bại: Trả về 401 Unauthorized
+            await HandleExceptionAsync(context, 401, "Bạn cần đăng nhập để tiếp tục", ex);
+        }
+        catch (ForbiddenException ex)
+        {
+            // Xử lý lỗi không đủ quyền: Trả về 403 Forbidden
+            await HandleExceptionAsync(context, 403, "Bạn không có quyền truy cập", ex);
+        }
         catch (Exception ex)
         {
             // Xử lý tất cả các lỗi còn lại: Trả về 500 Internal Server Error
