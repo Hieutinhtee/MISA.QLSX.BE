@@ -6,20 +6,20 @@ SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET FOREIGN_KEY_CHECKS = 0;
 START TRANSACTION;
 
+DROP TABLE IF EXISTS `contract_history`;
+DROP TABLE IF EXISTS `employee_tax_profile`;
+DROP TABLE IF EXISTS `deduction_policy`;
+DROP TABLE IF EXISTS `tax_bracket`;
+DROP TABLE IF EXISTS `salary_policy`;
+DROP TABLE IF EXISTS `payroll_snapshot`;
+DROP TABLE IF EXISTS `payroll_item`;
+DROP TABLE IF EXISTS `payroll`;
+DROP TABLE IF EXISTS `salary_period`;
 DROP TABLE IF EXISTS `leave_request`;
 DROP TABLE IF EXISTS `suggestion`;
 DROP TABLE IF EXISTS `evaluation`;
 DROP TABLE IF EXISTS `business_trip`;
 DROP TABLE IF EXISTS `attendance`;
-DROP TABLE IF EXISTS `payroll_item`;
-DROP TABLE IF EXISTS `payroll_snapshot`;
-DROP TABLE IF EXISTS `payroll`;
-DROP TABLE IF EXISTS `salary_period`;
-DROP TABLE IF EXISTS `contract_history`;
-DROP TABLE IF EXISTS `employee_tax_profile`;
-DROP TABLE IF EXISTS `tax_bracket`;
-DROP TABLE IF EXISTS `deduction_policy`;
-DROP TABLE IF EXISTS `salary_policy`;
 DROP TABLE IF EXISTS `employee`;
 DROP TABLE IF EXISTS `department`;
 DROP TABLE IF EXISTS `account`;
@@ -31,6 +31,8 @@ DROP TABLE IF EXISTS `allowance`;
 DROP TABLE IF EXISTS `position`;
 DROP TABLE IF EXISTS `degree`;
 DROP TABLE IF EXISTS `shift`;
+
+
 
 CREATE TABLE `shift` (
   `shift_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột shift_id: Khóa chính UUID của ca làm việc',
@@ -249,6 +251,27 @@ CREATE TABLE `employee` (
   `position_id` CHAR(36) DEFAULT NULL COMMENT 'Cột position_id: Khóa ngoại tham chiếu chức vụ',
   `account_id` CHAR(36) DEFAULT NULL COMMENT 'Cột account_id: Khóa ngoại tham chiếu tài khoản đăng nhập',
   `avatar_url` VARCHAR(255) NOT NULL DEFAULT 'profile.jpg' COMMENT 'Cột avatar_url: Đường dẫn hoặc tên tệp ảnh đại diện',
+  `place_of_birth` VARCHAR(255) DEFAULT NULL COMMENT 'Cột place_of_birth: Nơi sinh',
+  `hometown` VARCHAR(255) DEFAULT NULL COMMENT 'Cột hometown: Quê quán',
+  `ethnic` VARCHAR(50) DEFAULT 'Kinh' COMMENT 'Cột ethnic: Dân tộc',
+  `religion` VARCHAR(50) DEFAULT 'Không' COMMENT 'Cột religion: Tôn giáo',
+  `nationality` VARCHAR(50) DEFAULT 'Việt Nam' COMMENT 'Cột nationality: Quốc tịch',
+  `marital_status` VARCHAR(50) DEFAULT 'Độc thân' COMMENT 'Cột marital_status: Tình trạng hôn nhân',
+  `personal_email` VARCHAR(100) DEFAULT NULL COMMENT 'Cột personal_email: Email cá nhân',
+  `facebook_url` VARCHAR(255) DEFAULT NULL COMMENT 'Cột facebook_url: Link Facebook cá nhân',
+  `zalo_number` VARCHAR(20) DEFAULT NULL COMMENT 'Cột zalo_number: Số điện thoại Zalo',
+  `temporary_address` VARCHAR(255) DEFAULT NULL COMMENT 'Cột temporary_address: Địa chỉ tạm trú',
+  `bank_account_number` VARCHAR(50) DEFAULT NULL COMMENT 'Cột bank_account_number: Số tài khoản ngân hàng',
+  `bank_name` VARCHAR(100) DEFAULT NULL COMMENT 'Cột bank_name: Tên ngân hàng',
+  `bank_branch` VARCHAR(100) DEFAULT NULL COMMENT 'Cột bank_branch: Chi nhánh ngân hàng',
+  `emergency_contact_name` VARCHAR(120) DEFAULT NULL COMMENT 'Cột emergency_contact_name: Tên người liên hệ khẩn cấp',
+  `emergency_contact_phone` VARCHAR(20) DEFAULT NULL COMMENT 'Cột emergency_contact_phone: Số điện thoại người liên hệ khẩn cấp',
+  `emergency_contact_relationship` VARCHAR(50) DEFAULT NULL COMMENT 'Cột emergency_contact_relationship: Quan hệ với người liên hệ khẩn cấp',
+  `height` DECIMAL(5,2) DEFAULT NULL COMMENT 'Cột height: Chiều cao (cm)',
+  `weight` DECIMAL(5,2) DEFAULT NULL COMMENT 'Cột weight: Cân nặng (kg)',
+  `blood_group` VARCHAR(10) DEFAULT NULL COMMENT 'Cột blood_group: Nhóm máu',
+  `health_status` VARCHAR(255) DEFAULT NULL COMMENT 'Cột health_status: Tình trạng sức khỏe',
+  `social_insurance_number` VARCHAR(20) DEFAULT NULL COMMENT 'Cột social_insurance_number: Số sổ bảo hiểm xã hội',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo hồ sơ nhân viên',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu nhân viên',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của nhân viên',
@@ -606,102 +629,124 @@ CREATE TABLE `contract_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng contract_history: Lưu lịch sử thay đổi chi tiết của hợp đồng';
 
 -- =========================================================
+
+-- =========================================================
 -- DỮ LIỆU MẪU
 -- =========================================================
 
 INSERT INTO `shift` (`shift_id`,`shift_code`,`shift_name`,`start_time`,`break_start_time`,`end_time`,`break_end_time`,`working_hours`,`break_hours`,`is_active`,`description`) VALUES
-('10000000-0000-0000-0000-000000000001','SHIFT_AM','Ca sáng','08:00:00','12:00:00','17:00:00','13:00:00',8.00,1.00,1,'Ca làm việc buổi sáng'),
-('10000000-0000-0000-0000-000000000002','SHIFT_PM','Ca chiều','13:00:00','17:00:00','22:00:00','18:00:00',8.00,1.00,1,'Ca làm việc buổi chiều'),
-('10000000-0000-0000-0000-000000000003','SHIFT_HC','Hành chính','08:30:00','12:00:00','17:30:00','13:30:00',8.00,1.00,1,'Ca hành chính');
+(UUID(),'SHIFT_AM','Ca sáng','08:00:00','12:00:00','17:00:00','13:00:00',8.00,1.00,1,'Ca làm việc buổi sáng'),
+(UUID(),'SHIFT_PM','Ca chiều','13:00:00','17:00:00','22:00:00','18:00:00',8.00,1.00,1,'Ca làm việc buổi chiều'),
+(UUID(),'SHIFT_HC','Hành chính','08:30:00','12:00:00','17:30:00','13:30:00',8.00,1.00,1,'Ca hành chính');
 
 INSERT INTO `degree` (`degree_id`,`degree_code`,`degree_name`,`description`) VALUES
-('20000000-0000-0000-0000-000000000001','DEG_CAO_DANG','Cao đẳng','Bằng cao đẳng'),
-('20000000-0000-0000-0000-000000000002','DEG_DAI_HOC','Đại học','Bằng đại học'),
-('20000000-0000-0000-0000-000000000003','DEG_THAC_SI','Thạc sĩ','Bằng thạc sĩ'),
-('20000000-0000-0000-0000-000000000004','DEG_TIEN_SI','Tiến sĩ','Bằng tiến sĩ');
+(UUID(),'DEG_CAO_DANG','Cao đẳng','Bằng cao đẳng'),
+(UUID(),'DEG_DAI_HOC','Đại học','Bằng đại học'),
+(UUID(),'DEG_THAC_SI','Thạc sĩ','Bằng thạc sĩ'),
+(UUID(),'DEG_TIEN_SI','Tiến sĩ','Bằng tiến sĩ');
 
 INSERT INTO `position` (`position_id`,`position_code`,`position_name`,`description`,`allowance`) VALUES
-('30000000-0000-0000-0000-000000000001','POS_STAFF','Nhân viên','Nhân viên nghiệp vụ',500000),
-('30000000-0000-0000-0000-000000000002','POS_TEAM_LEAD','Tổ trưởng','Quản lý nhóm',1200000),
-('30000000-0000-0000-0000-000000000003','POS_MANAGER','Trưởng phòng','Quản lý phòng ban',2500000),
-('30000000-0000-0000-0000-000000000004','POS_DEPUTY','Phó phòng','Phó quản lý phòng ban',1800000),
-('30000000-0000-0000-0000-000000000005','POS_DIRECTOR','Giám đốc','Điều hành khối',4000000);
+(UUID(),'POS_STAFF','Nhân viên','Nhân viên nghiệp vụ',500000),
+(UUID(),'POS_TEAM_LEAD','Tổ trưởng','Quản lý nhóm',1200000),
+(UUID(),'POS_MANAGER','Trưởng phòng','Quản lý phòng ban',2500000),
+(UUID(),'POS_DEPUTY','Phó phòng','Phó quản lý phòng ban',1800000),
+(UUID(),'POS_DIRECTOR','Giám đốc','Điều hành khối',4000000);
 
 INSERT INTO `allowance` (`allowance_id`,`allowance_code`,`allowance_name`,`calculation_type`,`amount`,`percent`,`version`) VALUES
-('40000000-0000-0000-0000-000000000001','ALW_MEAL','Phụ cấp ăn trưa','FIXED',500000,NULL,1),
-('40000000-0000-0000-0000-000000000002','ALW_PHONE','Phụ cấp điện thoại','FIXED',300000,NULL,1),
-('40000000-0000-0000-0000-000000000003','ALW_RESP','Phụ cấp trách nhiệm','PERCENT',NULL,10.00,1),
-('40000000-0000-0000-0000-000000000004','ALW_TRAVEL','Phụ cấp đi lại','FIXED',400000,NULL,1),
-('40000000-0000-0000-0000-000000000005','ALW_HOUSING','Phụ cấp nhà ở','FIXED',800000,NULL,1);
+(UUID(),'ALW_MEAL','Phụ cấp ăn trưa','FIXED',500000,NULL,1),
+(UUID(),'ALW_PHONE','Phụ cấp điện thoại','FIXED',300000,NULL,1),
+(UUID(),'ALW_RESP','Phụ cấp trách nhiệm','PERCENT',NULL,10.00,1),
+(UUID(),'ALW_TRAVEL','Phụ cấp đi lại','FIXED',400000,NULL,1),
+(UUID(),'ALW_HOUSING','Phụ cấp nhà ở','FIXED',800000,NULL,1);
 
 INSERT INTO `contract_template` (`template_id`,`template_code`,`template_name`,`contract_type`,`content`,`version`,`is_active`) VALUES
-('50000000-0000-0000-0000-000000000001','TPL_PROBATION','Mẫu hợp đồng thử việc','Thử việc','Nội dung mẫu thử việc',1,1),
-('50000000-0000-0000-0000-000000000002','TPL_FIXED','Mẫu hợp đồng xác định thời hạn','Có thời hạn','Nội dung mẫu có thời hạn',1,1),
-('50000000-0000-0000-0000-000000000003','TPL_OPEN','Mẫu hợp đồng không xác định thời hạn','Không thời hạn','Nội dung mẫu không thời hạn',1,1);
+(UUID(),'TPL_PROBATION','Mẫu hợp đồng thử việc','Thử việc','Nội dung mẫu thử việc',1,1),
+(UUID(),'TPL_FIXED','Mẫu hợp đồng xác định thời hạn','Có thời hạn','Nội dung mẫu có thời hạn',1,1),
+(UUID(),'TPL_OPEN','Mẫu hợp đồng không xác định thời hạn','Không thời hạn','Nội dung mẫu không thời hạn',1,1);
 
 INSERT INTO `role` (`role_id`,`role_code`,`role_name`,`description`) VALUES
-('60000000-0000-0000-0000-000000000001','ROLE_ADMIN','Quản trị viên','Toàn quyền hệ thống'),
-('60000000-0000-0000-0000-000000000002','ROLE_HR','Nhân sự','Quản lý hồ sơ nhân sự'),
-('60000000-0000-0000-0000-000000000003','ROLE_EMP','Nhân viên','Người dùng nhân viên');
+(UUID(),'ROLE_ADMIN','Quản trị viên','Toàn quyền hệ thống'),
+(UUID(),'ROLE_HR','Nhân sự','Quản lý hồ sơ nhân sự'),
+(UUID(),'ROLE_EMP','Nhân viên','Người dùng nhân viên');
 
 INSERT INTO `account` (`account_id`,`account_code`,`username`,`password_hash`,`role_id`,`is_active`) VALUES
-('61000000-0000-0000-0000-000000000001','ACC_ADMIN','admin','$2a$10$samplehashadmin', '60000000-0000-0000-0000-000000000001',1),
-('61000000-0000-0000-0000-000000000002','ACC_HR01','hr01','$2a$10$samplehashhr01', '60000000-0000-0000-0000-000000000002',1),
-('61000000-0000-0000-0000-000000000003','ACC_EMP01','emp01','$2a$10$samplehashemp01', '60000000-0000-0000-0000-000000000003',1),
-('61000000-0000-0000-0000-000000000004','ACC_EMP02','emp02','$2a$10$samplehashemp02', '60000000-0000-0000-0000-000000000003',1);
+(UUID(),'ACC_ADMIN','admin','$2b$12$c5aggsyJ5ztAgCidkiawFO9CSNHfSULpZsC3goirv0lMS10QNWw6m',(SELECT role_id FROM role WHERE role_code='ROLE_ADMIN'),1),
+(UUID(),'ACC_HR01','hr','$2b$12$tBFQXJhmYIMjGZ84D1SZH.vaOPbOFyeyXgnfDjcnJ46D4WMvvyg0G',(SELECT role_id FROM role WHERE role_code='ROLE_HR'),1),
+(UUID(),'ACC_MGR01','manager','$2b$12$DcaI5cocW509bVHakUh9Q.pvZX7Z88aBkZNO/PR61lMu/5eOEC8vm',(SELECT role_id FROM role WHERE role_code='ROLE_HR'),1),
+(UUID(),'ACC_EMP01','nhanvien','$2b$12$4MLovO9KvVr9ig.MDhytyuG4EAWXyMjyaL9eX1pPhrZMdQ.Vg3sNa',(SELECT role_id FROM role WHERE role_code='ROLE_EMP'),1);
 
 INSERT INTO `department` (`department_id`,`department_code`,`department_name`,`description`) VALUES
-('70000000-0000-0000-0000-000000000001','DEP_HR','Phòng nhân sự','Quản lý nhân sự và hành chính'),
-('70000000-0000-0000-0000-000000000002','DEP_FIN','Phòng tài chính','Kế toán và tài chính'),
-('70000000-0000-0000-0000-000000000003','DEP_SALES','Phòng kinh doanh','Kinh doanh và chăm sóc khách hàng'),
-('70000000-0000-0000-0000-000000000004','DEP_PROD','Phòng sản xuất','Vận hành và sản xuất');
+(UUID(),'DEP_HR','Phòng nhân sự','Quản lý nhân sự và hành chính'),
+(UUID(),'DEP_FIN','Phòng tài chính','Kế toán và tài chính'),
+(UUID(),'DEP_SALES','Phòng kinh doanh','Kinh doanh và chăm sóc khách hàng'),
+(UUID(),'DEP_PROD','Phòng sản xuất','Vận hành và sản xuất');
 
 INSERT INTO `employee` (
   `employee_id`,`employee_code`,`full_name`,`gender`,`date_of_birth`,`address`,`phone_number`,`email`,`join_date`,
-  `department_id`,`shift_id`,`national_id`,`degree_id`,`contract_id`,`position_id`,`account_id`,`avatar_url`
+  `department_id`,`shift_id`,`national_id`,`degree_id`,`contract_id`,`position_id`,`account_id`,`avatar_url`,
+  `place_of_birth`, `hometown`, `ethnic`, `religion`, `nationality`, `marital_status`, `personal_email`, 
+  `facebook_url`, `zalo_number`, `temporary_address`, `bank_account_number`, `bank_name`, `bank_branch`, 
+  `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `height`, `weight`, 
+  `blood_group`, `health_status`, `social_insurance_number`
 )
 SELECT
   UUID(),
   CONCAT('EMP', LPAD(n, 4, '0')),
-  CONCAT('Nhân viên ', LPAD(n, 2, '0')),
+  ELT(MOD(n, 20) + 1, 
+    'Nguyễn Minh Tuấn', 'Trần Thu Trang', 'Trần Đức Hải', 'Nguyễn Mai Phương', 
+    'Lê Thanh Bình', 'Lê Thị Ngọc Ánh', 'Phạm Quốc Việt', 'Phạm Thanh Hương', 
+    'Hoàng Trọng Nghĩa', 'Hoàng Thúy Quỳnh', 'Vũ Tuấn Anh', 'Vũ Hà My', 
+    'Đặng Văn Khoa', 'Đặng Cẩm Tú', 'Bùi Xuân Bách', 'Bùi Thảo Ngọc', 
+    'Đỗ Tiến Đạt', 'Đỗ Mai Lan', 'Ngô Hoàng Phúc', 'Ngô Kim Liên'
+  ),
   CASE WHEN MOD(n,2)=0 THEN 'Nam' ELSE 'Nữ' END,
   DATE_ADD('1990-01-01', INTERVAL n * 120 DAY),
-  CONCAT('Địa chỉ ', n, ', Hà Nội'),
-  CONCAT('09', LPAD(n, 8, '0')),
-  CONCAT('emp', LPAD(n, 3, '0'), '@misa.local'),
+  CONCAT('Số ', n, ' Tôn Thất Thuyết, Cầu Giấy, Hà Nội'),
+  CONCAT('0987', LPAD(n, 6, '0')),
+  CONCAT('emp', LPAD(n, 4, '0'), '@misa.com.vn'),
   DATE_ADD('2023-01-01', INTERVAL n DAY),
   CASE MOD(n,4)
-    WHEN 1 THEN '70000000-0000-0000-0000-000000000001'
-    WHEN 2 THEN '70000000-0000-0000-0000-000000000002'
-    WHEN 3 THEN '70000000-0000-0000-0000-000000000003'
-    ELSE '70000000-0000-0000-0000-000000000004'
+    WHEN 1 THEN (SELECT department_id FROM department WHERE department_code='DEP_HR')
+    WHEN 2 THEN (SELECT department_id FROM department WHERE department_code='DEP_FIN')
+    WHEN 3 THEN (SELECT department_id FROM department WHERE department_code='DEP_SALES')
+    ELSE (SELECT department_id FROM department WHERE department_code='DEP_PROD')
   END,
   CASE MOD(n,3)
-    WHEN 1 THEN '10000000-0000-0000-0000-000000000001'
-    WHEN 2 THEN '10000000-0000-0000-0000-000000000002'
-    ELSE '10000000-0000-0000-0000-000000000003'
+    WHEN 1 THEN (SELECT shift_id FROM shift WHERE shift_code='SHIFT_AM')
+    WHEN 2 THEN (SELECT shift_id FROM shift WHERE shift_code='SHIFT_PM')
+    ELSE (SELECT shift_id FROM shift WHERE shift_code='SHIFT_HC')
   END,
-  CONCAT('079', LPAD(n, 9, '0')),
+  CONCAT('001090', LPAD(n, 6, '0')),
   CASE MOD(n,4)
-    WHEN 1 THEN '20000000-0000-0000-0000-000000000001'
-    WHEN 2 THEN '20000000-0000-0000-0000-000000000002'
-    WHEN 3 THEN '20000000-0000-0000-0000-000000000003'
-    ELSE '20000000-0000-0000-0000-000000000004'
+    WHEN 1 THEN (SELECT degree_id FROM degree WHERE degree_code='DEG_CAO_DANG')
+    WHEN 2 THEN (SELECT degree_id FROM degree WHERE degree_code='DEG_DAI_HOC')
+    WHEN 3 THEN (SELECT degree_id FROM degree WHERE degree_code='DEG_THAC_SI')
+    ELSE (SELECT degree_id FROM degree WHERE degree_code='DEG_TIEN_SI')
   END,
   NULL,
   CASE
-    WHEN MOD(n,10)=0 THEN '30000000-0000-0000-0000-000000000003'
-    WHEN MOD(n,5)=0 THEN '30000000-0000-0000-0000-000000000002'
-    ELSE '30000000-0000-0000-0000-000000000001'
+    WHEN MOD(n,10)=0 THEN (SELECT position_id FROM position WHERE position_code='POS_MANAGER')
+    WHEN MOD(n,5)=0 THEN (SELECT position_id FROM position WHERE position_code='POS_TEAM_LEAD')
+    ELSE (SELECT position_id FROM position WHERE position_code='POS_STAFF')
   END,
   CASE n
-    WHEN 1 THEN '61000000-0000-0000-0000-000000000001'
-    WHEN 2 THEN '61000000-0000-0000-0000-000000000002'
-    WHEN 3 THEN '61000000-0000-0000-0000-000000000003'
-    WHEN 4 THEN '61000000-0000-0000-0000-000000000004'
+    WHEN 1 THEN (SELECT account_id FROM account WHERE account_code='ACC_ADMIN')
+    WHEN 2 THEN (SELECT account_id FROM account WHERE account_code='ACC_HR01')
+    WHEN 3 THEN (SELECT account_id FROM account WHERE account_code='ACC_MGR01')
+    WHEN 4 THEN (SELECT account_id FROM account WHERE account_code='ACC_EMP01')
     ELSE NULL
   END,
-  'profile.jpg'
+  'profile.jpg',
+  'Hà Nội', 'Thái Bình', 'Kinh', 'Không', 'Việt Nam', 'Độc thân', 
+  CONCAT('nguyenvana', n, '@gmail.com'), 
+  CONCAT('https://fb.com/nguyenvana', n), 
+  CONCAT('0987', LPAD(n, 6, '0')), 
+  CONCAT('Tạm trú tại Cầu Giấy, Hà Nội'),
+  CONCAT('102', LPAD(n, 7, '0')), 'Vietcombank', 'Thăng Long',
+  ELT(MOD(n, 5) + 1, 'Nguyễn Hữu Tài', 'Lê Kim Dung', 'Trần Văn Cường', 'Đặng Thị Yến', 'Phạm Hải Đăng'), 
+  CONCAT('0912', LPAD(n, 6, '0')), 
+  ELT(MOD(n, 3) + 1, 'Bố', 'Mẹ', 'Anh/Chị'),
+  165 + MOD(n, 20), 55 + MOD(n, 15), 'O', 'Tốt', CONCAT('791', LPAD(n, 7, '0'))
 FROM (
   SELECT d.n + (t.n * 10) AS n
   FROM (
@@ -714,6 +759,7 @@ FROM (
 ) seq
 WHERE seq.n BETWEEN 1 AND 50;
 
+-- Set Manager for departments
 UPDATE `department` d
 JOIN `employee` e ON (
   (d.department_code = 'DEP_HR' AND e.employee_code = 'EMP0001') OR
@@ -731,9 +777,9 @@ SELECT
   UUID(),
   CONCAT('CT-', e.employee_code),
   CASE
-    WHEN RIGHT(e.employee_code,2) IN ('01','02','03','04','05','06','07','08','09','10') THEN '50000000-0000-0000-0000-000000000001'
-    WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN '50000000-0000-0000-0000-000000000002'
-    ELSE '50000000-0000-0000-0000-000000000003'
+    WHEN RIGHT(e.employee_code,2) IN ('01','02','03','04','05','06','07','08','09','10') THEN (SELECT template_id FROM contract_template WHERE template_code='TPL_PROBATION')
+    WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN (SELECT template_id FROM contract_template WHERE template_code='TPL_FIXED')
+    ELSE (SELECT template_id FROM contract_template WHERE template_code='TPL_OPEN')
   END,
   (SELECT employee_id FROM employee WHERE employee_code='EMP0001'),
   'Giám đốc nhân sự',
@@ -758,17 +804,17 @@ JOIN contract c ON c.employee_id = e.employee_id
 SET e.contract_id = c.contract_id;
 
 INSERT INTO `contract_allowance` (`contract_allowance_id`,`contract_id`,`allowance_id`)
-SELECT UUID(), c.contract_id, '40000000-0000-0000-0000-000000000001'
+SELECT UUID(), c.contract_id, (SELECT allowance_id FROM allowance WHERE allowance_code='ALW_MEAL')
 FROM contract c;
 
 INSERT INTO `contract_allowance` (`contract_allowance_id`,`contract_id`,`allowance_id`)
-SELECT UUID(), c.contract_id, '40000000-0000-0000-0000-000000000002'
+SELECT UUID(), c.contract_id, (SELECT allowance_id FROM allowance WHERE allowance_code='ALW_PHONE')
 FROM contract c;
 
 INSERT INTO `salary_period` (`salary_period_id`,`start_date`,`end_date`,`status`) VALUES
-('90000000-0000-0000-0000-000000000001','2026-01-01','2026-01-31','paid'),
-('90000000-0000-0000-0000-000000000002','2026-02-01','2026-02-28','paid'),
-('90000000-0000-0000-0000-000000000003','2026-03-01','2026-03-31','locked');
+(UUID(),'2026-01-01','2026-01-31','paid'),
+(UUID(),'2026-02-01','2026-02-28','paid'),
+(UUID(),'2026-03-01','2026-03-31','locked');
 
 INSERT INTO `attendance` (
   `attendance_id`,`attendance_code`,`employee_id`,`shift_id`,`attendance_date`,`working_hours`,`overtime_hours`,`penalty_amount`,`bonus_amount`,`net_income`
@@ -786,10 +832,7 @@ SELECT
   0
 FROM employee e
 CROSS JOIN (
-  SELECT 1 AS d
-  UNION ALL SELECT 2
-  UNION ALL SELECT 3
-  UNION ALL SELECT 4
+  SELECT 1 AS d UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
 ) day_seq;
 
 INSERT INTO `evaluation` (`evaluation_id`,`evaluation_code`,`employee_id`,`evaluation_type`,`reason`,`amount`,`evaluation_date`)
@@ -798,139 +841,145 @@ SELECT
   CONCAT('EV', RIGHT(e.employee_code,4)),
   e.employee_id,
   CASE WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN 'Khen thưởng' ELSE 'Vi phạm' END,
-  CASE WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN 'Hiệu suất tốt trong tháng' ELSE 'Đi muộn nhiều lần' END,
-  CASE WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN 300000 ELSE 150000 END,
+  CASE WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN 'Hoàn thành xuất sắc nhiệm vụ' ELSE 'Đi muộn' END,
+  CASE WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN 500000 ELSE 100000 END,
   '2026-03-15'
 FROM employee e
-WHERE CAST(RIGHT(e.employee_code,2) AS UNSIGNED) <= 20;
+WHERE MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED), 4) = 0;
 
-INSERT INTO `business_trip` (`business_trip_id`,`business_trip_code`,`employee_id`,`start_date`,`end_date`,`location`,`purpose`,`support_amount`)
+
+-- =========================================================
+-- VIEWS
+-- =========================================================
+
+
+
+-- View danh sách nhân viên phục vụ hiển thị màn hình
+-- Có thể chạy nhiều lần an toàn
+DROP VIEW IF EXISTS `vw_employee_detail`;
+
+CREATE OR REPLACE VIEW `vw_employee_detail` AS
 SELECT
-  UUID(),
-  CONCAT('BT', RIGHT(e.employee_code,4)),
-  e.employee_id,
-  '2026-03-10',
-  '2026-03-12',
-  'Hồ Chí Minh',
-  'Làm việc với đối tác',
-  500000
-FROM employee e
-WHERE CAST(RIGHT(e.employee_code,2) AS UNSIGNED) <= 8;
+  e.`employee_id`,
+  e.`employee_code`,
+  e.`full_name`,
+  e.`gender`,
+  e.`date_of_birth`,
+  e.`address`,
+  e.`phone_number`,
+  e.`email`,
+  e.`join_date`,
+  e.`contract_id`,
+  e.`national_id`,
+  e.`avatar_url`,
+  d.`department_name`,
+  s.`shift_name`,
+  g.`degree_name`,
+  p.`position_name`,
+  a.`username` AS `account_name`,
+  e.`created_at`,
+  e.`updated_at`
+FROM `employee` e
+LEFT JOIN `department` d ON e.`department_id` = d.`department_id`
+LEFT JOIN `shift` s ON e.`shift_id` = s.`shift_id`
+LEFT JOIN `degree` g ON e.`degree_id` = g.`degree_id`
+LEFT JOIN `position` p ON e.`position_id` = p.`position_id`
+LEFT JOIN `account` a ON e.`account_id` = a.`account_id`;
 
-INSERT INTO `suggestion` (`suggestion_id`,`suggestion_code`,`employee_id`,`title`,`content`)
+
+
+-- View danh sách hợp đồng phục vụ hiển thị màn hình
+-- Có thể chạy nhiều lần an toàn
+DROP VIEW IF EXISTS `vw_contract_detail`;
+
+CREATE OR REPLACE VIEW `vw_contract_detail` AS
 SELECT
-  UUID(),
-  CONCAT('SG', RIGHT(e.employee_code,4)),
-  e.employee_id,
-  CONCAT('Đề xuất cải tiến quy trình ', RIGHT(e.employee_code,2)),
-  'Đề xuất tối ưu quy trình vận hành để giảm thời gian xử lý công việc.'
-FROM employee e
-WHERE CAST(RIGHT(e.employee_code,2) AS UNSIGNED) <= 10;
+  c.`contract_id`,
+  c.`contract_code`,
+  c.`template_id`,
+  t.`template_code`,
+  t.`template_name`,
+  t.`contract_type`,
+  c.`company_representative_id`,
+  rep.`employee_code` AS `company_representative_code`,
+  rep.`full_name` AS `company_representative_name`,
+  c.`company_signer_title`,
+  c.`employee_id`,
+  e.`employee_code`,
+  e.`full_name` AS `employee_name`,
+  c.`effective_date`,
+  c.`term_months`,
+  c.`base_salary`,
+  c.`insurance_salary`,
+  c.`salary_ratio`,
+  c.`summary`,
+  c.`attachment_link`,
+  c.`is_signed`,
+  c.`signed_at`,
+  c.`contract_status`,
+  c.`end_date`,
+  c.`terminated_at`,
+  c.`created_at`,
+  c.`created_by`,
+  c.`updated_by`,
+  c.`updated_at`
+FROM `contract` c
+LEFT JOIN `contract_template` t ON c.`template_id` = t.`template_id`
+LEFT JOIN `employee` e ON c.`employee_id` = e.`employee_id`
+LEFT JOIN `employee` rep ON c.`company_representative_id` = rep.`employee_id`;
 
-INSERT INTO `leave_request` (`leave_request_id`,`leave_request_code`,`employee_id`,`start_date`,`return_date`,`reason`,`approval_status`)
+
+
+
+-- ==========================================================
+-- View danh sách công tác kèm thông tin nhân viên
+-- Có thể chạy nhiều lần an toàn
+-- ==========================================================
+DROP VIEW IF EXISTS `vw_business_trip_detail`;
+
+CREATE OR REPLACE VIEW `vw_business_trip_detail` AS
 SELECT
-  UUID(),
-  CONCAT('LR', RIGHT(e.employee_code,4)),
-  e.employee_id,
-  '2026-03-20',
-  '2026-03-22',
-  'Nghỉ phép cá nhân',
-  CASE WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN 1 ELSE 0 END
-FROM employee e
-WHERE CAST(RIGHT(e.employee_code,2) AS UNSIGNED) <= 12;
+  bt.`business_trip_id`,
+  bt.`business_trip_code`,
+  bt.`employee_id`,
+  e.`employee_code`,
+  e.`full_name` AS `employee_name`,
+  bt.`start_date`,
+  bt.`end_date`,
+  bt.`location`,
+  bt.`purpose`,
+  bt.`support_amount`,
+  bt.`created_at`,
+  bt.`created_by`,
+  bt.`updated_by`,
+  bt.`updated_at`
+FROM `business_trip` bt
+LEFT JOIN `employee` e ON bt.`employee_id` = e.`employee_id`;
 
-INSERT INTO `payroll` (
-  `payroll_id`,`payroll_code`,`salary_period_id`,`employee_id`,`status`,`gross_salary`,`net_salary`,`taxable_salary`,`total_allowance`,`total_addition`,`total_deduction`
-)
+
+-- ==========================================================
+-- View danh sách đánh giá thưởng phạt kèm thông tin nhân viên
+-- Có thể chạy nhiều lần an toàn
+-- ==========================================================
+DROP VIEW IF EXISTS `vw_evaluation_detail`;
+
+CREATE OR REPLACE VIEW `vw_evaluation_detail` AS
 SELECT
-  UUID(),
-  CONCAT('PR-202603-', RIGHT(e.employee_code,4)),
-  '90000000-0000-0000-0000-000000000003',
-  e.employee_id,
-  'locked',
-  (c.base_salary + 800000 + 300000),
-  (c.base_salary + 800000 + 300000 - 200000),
-  (c.base_salary + 300000),
-  800000,
-  300000,
-  200000
-FROM employee e
-JOIN contract c ON c.employee_id = e.employee_id;
+  ev.`evaluation_id`,
+  ev.`evaluation_code`,
+  ev.`employee_id`,
+  e.`employee_code`,
+  e.`full_name` AS `employee_name`,
+  ev.`evaluation_type`,
+  ev.`reason`,
+  ev.`amount`,
+  ev.`evaluation_date`,
+  ev.`created_at`,
+  ev.`created_by`,
+  ev.`updated_by`,
+  ev.`updated_at`
+FROM `evaluation` ev
+LEFT JOIN `employee` e ON ev.`employee_id` = e.`employee_id`;
 
--- Seed data cho các bảng policy
-INSERT INTO `salary_policy`
-(`policy_id`,`policy_code`,`policy_name`,`standard_workdays`,`overtime_multiplier_weekday`,`overtime_multiplier_weekend`,`overtime_multiplier_holiday`,`effective_from`,`is_active`,`description`)
-VALUES
-('a1000000-0000-0000-0000-000000000001','SALPOL_2026','Chính sách lương chuẩn 2026',22.00,1.50,2.00,3.00,'2026-01-01',1,'Tính lương ngày = (lương_cơ_bản * tỷ_lệ / 100) / 22, áp dụng cho tất cả nhân viên')
-ON DUPLICATE KEY UPDATE
-  `policy_name` = VALUES(`policy_name`),
-  `standard_workdays` = VALUES(`standard_workdays`),
-  `overtime_multiplier_weekday` = VALUES(`overtime_multiplier_weekday`),
-  `overtime_multiplier_weekend` = VALUES(`overtime_multiplier_weekend`),
-  `overtime_multiplier_holiday` = VALUES(`overtime_multiplier_holiday`),
-  `effective_from` = VALUES(`effective_from`),
-  `is_active` = VALUES(`is_active`),
-  `description` = VALUES(`description`);
 
-INSERT INTO `deduction_policy`
-(`deduction_policy_id`,`policy_code`,`policy_name`,`social_insurance_rate`,`health_insurance_rate`,`unemployment_insurance_rate`,`personal_deduction_amount`,`dependent_deduction_amount`,`effective_from`,`is_active`,`description`)
-VALUES
-('a2000000-0000-0000-0000-000000000001','DEDPOL_2026','Chính sách giảm trừ/bảo hiểm 2026',8.00,1.50,1.00,11000000,4400000,'2026-01-01',1,'BHXH 8%, BHYT 1.5%, BHTN 1%, theo lương bảo hiểm; giảm trừ cá nhân 11M VND + phụ thuộc 4.4M VND/người')
-ON DUPLICATE KEY UPDATE
-  `policy_name` = VALUES(`policy_name`),
-  `social_insurance_rate` = VALUES(`social_insurance_rate`),
-  `health_insurance_rate` = VALUES(`health_insurance_rate`),
-  `unemployment_insurance_rate` = VALUES(`unemployment_insurance_rate`),
-  `personal_deduction_amount` = VALUES(`personal_deduction_amount`),
-  `dependent_deduction_amount` = VALUES(`dependent_deduction_amount`),
-  `effective_from` = VALUES(`effective_from`),
-  `is_active` = VALUES(`is_active`),
-  `description` = VALUES(`description`);
-
-INSERT INTO `tax_bracket`
-(`tax_bracket_id`,`bracket_code`,`bracket_name`,`lower_bound`,`upper_bound`,`tax_rate`,`quick_deduction`,`effective_from`,`is_active`)
-VALUES
-('a3000000-0000-0000-0000-000000000001','PIT_B1_2026','Bậc 1: 0 - 5 triệu',0,5000000,5.00,0,'2026-01-01',1),
-('a3000000-0000-0000-0000-000000000002','PIT_B2_2026','Bậc 2: 5 - 10 triệu',5000000,10000000,10.00,250000,'2026-01-01',1),
-('a3000000-0000-0000-0000-000000000003','PIT_B3_2026','Bậc 3: 10 - 18 triệu',10000000,18000000,15.00,750000,'2026-01-01',1),
-('a3000000-0000-0000-0000-000000000004','PIT_B4_2026','Bậc 4: 18 - 32 triệu',18000000,32000000,20.00,1650000,'2026-01-01',1),
-('a3000000-0000-0000-0000-000000000005','PIT_B5_2026','Bậc 5: 32 - 52 triệu',32000000,52000000,25.00,3250000,'2026-01-01',1),
-('a3000000-0000-0000-0000-000000000006','PIT_B6_2026','Bậc 6: 52 - 80 triệu',52000000,80000000,30.00,5850000,'2026-01-01',1),
-('a3000000-0000-0000-0000-000000000007','PIT_B7_2026','Bậc 7: > 80 triệu',80000000,NULL,35.00,9850000,'2026-01-01',1)
-ON DUPLICATE KEY UPDATE
-  `bracket_name` = VALUES(`bracket_name`),
-  `lower_bound` = VALUES(`lower_bound`),
-  `upper_bound` = VALUES(`upper_bound`),
-  `tax_rate` = VALUES(`tax_rate`),
-  `quick_deduction` = VALUES(`quick_deduction`),
-  `effective_from` = VALUES(`effective_from`),
-  `is_active` = VALUES(`is_active`);
-
-INSERT INTO `payroll_item` (`payroll_item_id`,`payroll_item_code`,`payroll_id`,`item_type`,`item_name`,`amount`,`source_table`,`source_id`,`note`)
-SELECT
-  UUID(),
-  CONCAT('PI-ADD-', RIGHT(p.payroll_code,4)),
-  p.payroll_id,
-  'addition',
-  'Khoản cộng thêm tháng',
-  p.total_addition,
-  'manual',
-  NULL,
-  'Khoản cộng thêm tổng hợp theo tháng'
-FROM payroll p;
-
-INSERT INTO `payroll_item` (`payroll_item_id`,`payroll_item_code`,`payroll_id`,`item_type`,`item_name`,`amount`,`source_table`,`source_id`,`note`)
-SELECT
-  UUID(),
-  CONCAT('PI-DED-', RIGHT(p.payroll_code,4)),
-  p.payroll_id,
-  'deduction',
-  'Khoản khấu trừ tháng',
-  p.total_deduction,
-  'manual',
-  NULL,
-  'Khoản khấu trừ tổng hợp theo tháng'
-FROM payroll p;
-
-SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -418,10 +418,9 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// <returns>Entity T nếu tồn tại.</returns>
         public async Task<T?> GetById(Guid id)
         {
-            // Sử dụng using để tự động đóng connection sau khi dùng xong
             using var conn = Connection;
 
-            var sql = $@" SELECT * FROM {_tableName} WHERE {_idColumn} = @Id;";
+            var sql = $@" SELECT * FROM {GetReadTableName()} WHERE {_idColumn} = @Id;";
 
             var entity = await conn.QueryFirstOrDefaultAsync<T>(sql, new { Id = id });
             return entity;

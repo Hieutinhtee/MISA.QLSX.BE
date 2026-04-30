@@ -124,5 +124,12 @@ namespace MISA.QLSX.Core.Interfaces.Service
         /// <returns>Tổng số bản ghi đã bị ảnh hưởng</returns>
         /// Created by TMHieu - 8/12/2025
         Task<int> DeleteManyAsync(List<Guid> ids);
+
+        /// <summary>
+        /// Xuất Excel theo danh sách ID được chọn.
+        /// </summary>
+        /// <param name="ids">Danh sách ID bản ghi cần xuất.</param>
+        /// <returns>Mảng byte của file Excel.</returns>
+        Task<byte[]> ExportSelectedExcelAsync(List<Guid> ids);
     }
 }

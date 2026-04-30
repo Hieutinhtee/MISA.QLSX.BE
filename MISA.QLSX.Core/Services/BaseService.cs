@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.DTOs.Responses;
 using MISA.QLSX.Core.Exceptions;
 using MISA.QLSX.Core.Interfaces.Repository;
 using MISA.QLSX.Core.Interfaces.Service;
+using OfficeOpenXml;
 
 namespace MISA.QLSX.Core.Services
 {
@@ -237,6 +239,91 @@ namespace MISA.QLSX.Core.Services
             int affected = await _repo.DeleteManyAsync(ids);
 
             return affected;
+        }
+
+        /// <summary>
+        /// Xuất Excel theo danh sách ID được chọn.
+        /// </summary>
+        /// <param name="ids">Danh sách ID bản ghi cần xuất.</param>
+        /// <returns>Mảng byte của file Excel.</returns>
+        public virtual async Task<byte[]> ExportSelectedExcelAsync(List<Guid> ids)
+        {
+            if (ids == null || ids.Count == 0)
+                throw new ValidateException("Danh sách ID trống", "Danh sách bản ghi cần xuất không được để trống");
+
+            var keyProp = typeof(T)
+                .GetProperties()
+                .FirstOrDefault(p => p.GetCustomAttributes(typeof(KeyAttribute), true).Any());
+
+            if (keyProp == null)
+                throw new ValidateException("Thiếu khóa chính", $"{typeof(T).Name} chưa khai báo [Key]");
+
+            var allData = await _repo.GetAllAsync();
+
+            var selectedData = allData
+                .Where(item =>
+                {
+                    var raw = keyProp.GetValue(item);
+                    if (raw == null) return false;
+
+                    if (raw is Guid guidValue)
+                        return ids.Contains(guidValue);
+
+                    return Guid.TryParse(raw.ToString(), out var parsed) && ids.Contains(parsed);
+                })
+                .ToList();
+
+            ExcelPackage.License.SetNonCommercialPersonal("TMHieu");
+
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add(typeof(T).Name);
+
+            var exportProps = typeof(T)
+                .GetProperties()
+                .Where(p => p.CanRead && IsSupportedExportType(p.PropertyType))
+                .ToList();
+
+            for (int col = 0; col < exportProps.Count; col++)
+            {
+                worksheet.Cells[1, col + 1].Value = exportProps[col].Name;
+            }
+
+            for (int row = 0; row < selectedData.Count; row++)
+            {
+                var entity = selectedData[row];
+                for (int col = 0; col < exportProps.Count; col++)
+                {
+                    var value = exportProps[col].GetValue(entity);
+                    worksheet.Cells[row + 2, col + 1].Value = value;
+                }
+            }
+
+            worksheet.Cells.AutoFitColumns();
+            return package.GetAsByteArray();
+        }
+
+        /// <summary>
+        /// Kiểm tra kiểu dữ liệu có hỗ trợ xuất Excel mặc định hay không.
+        /// </summary>
+        /// <param name="propertyType">Kiểu dữ liệu của property.</param>
+        /// <returns>True nếu là kiểu đơn giản có thể xuất trực tiếp.</returns>
+        private static bool IsSupportedExportType(Type propertyType)
+        {
+            var targetType = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
+
+            return targetType.IsPrimitive
+                || targetType == typeof(string)
+                || targetType == typeof(DateTime)
+                || targetType == typeof(Guid)
+                || targetType == typeof(decimal)
+                || targetType == typeof(double)
+                || targetType == typeof(float)
+                || targetType == typeof(int)
+                || targetType == typeof(long)
+                || targetType == typeof(short)
+                || targetType == typeof(bool)
+                || targetType == typeof(TimeSpan)
+                || targetType.IsEnum;
         }
     }
 }

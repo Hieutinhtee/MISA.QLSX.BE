@@ -1,4 +1,4 @@
-﻿using MISA.QLSX.Core.Interfaces.Repository;
+using MISA.QLSX.Core.Interfaces.Repository;
 using MISA.QLSX.Core.Interfaces.Service;
 using MISA.QLSX.Core.Services;
 using MISA.QLSX.Infrastructure.Connection;
@@ -24,6 +24,7 @@ builder.Services.AddSingleton<MySqlConnectionFactory>(new MySqlConnectionFactory
 builder.Services.AddScoped<IShiftRepository, ShiftRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IDegreeRepository, DegreeRepository>();
 builder.Services.AddScoped<IContractTemplateRepository, ContractTemplateRepository>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<ISalaryPolicyRepository, SalaryPolicyRepository>();
@@ -38,11 +39,14 @@ builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 builder.Services.AddScoped<IAllowanceRepository, AllowanceRepository>();
 builder.Services.AddScoped<IBusinessTripRepository, BusinessTripRepository>();
 builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
+builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 
 // Đăng ký Service
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IDegreeService, DegreeService>();
 builder.Services.AddScoped<IContractTemplateService, ContractTemplateService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<ISalaryPolicyService, SalaryPolicyService>();
@@ -56,6 +60,8 @@ builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<IAllowanceService, AllowanceService>();
 builder.Services.AddScoped<IBusinessTripService, BusinessTripService>();
 builder.Services.AddScoped<IEvaluationService, EvaluationService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IPositionService, PositionService>();
 
 //Thêm Distributed Memory Cache và Session
 builder.Services.AddDistributedMemoryCache();

@@ -210,6 +210,30 @@ namespace MISA.QLSX.Api.Controllers
             return Ok(new { TotalAffected = affected });
         }
 
+        /// <summary>
+        /// Xuất Excel các bản ghi theo danh sách ID được chọn.
+        /// </summary>
+        /// <param name="ids">Danh sách ID bản ghi cần xuất.</param>
+        /// <returns>File Excel theo danh sách đã chọn.</returns>
+        [HttpPost("export-selected")]
+        public virtual async Task<IActionResult> ExportSelected([FromBody] List<Guid> ids)
+        {
+            if (ids == null || ids.Count == 0)
+            {
+                throw new ValidateException(
+                    "Danh sách Id trống.",
+                    "Danh sách bản ghi cần xuất không được để trống."
+                );
+            }
+
+            var file = await _service.ExportSelectedExcelAsync(ids);
+            return File(
+                file,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"{typeof(T).Name}-selected.xlsx"
+            );
+        }
+
         #endregion Method
     }
 }
