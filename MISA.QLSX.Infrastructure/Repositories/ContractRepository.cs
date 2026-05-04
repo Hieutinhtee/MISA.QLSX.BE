@@ -71,6 +71,8 @@ namespace MISA.QLSX.Infrastructure.Repositories
                 ["signedAt"] = new() { Column = "signed_at", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte", "isnull", "notnull" } },
                 ["createdAt"] = new() { Column = "created_at", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte" } },
                 ["updatedAt"] = new() { Column = "updated_at", DataType = typeof(DateTime), Operators = new() { "eq", "lt", "lte", "gt", "gte" } },
+                ["shiftId"] = new() { Column = "shift_id", DataType = typeof(Guid), Operators = new() { "eq", "neq", "isnull", "notnull" } },
+                ["shiftName"] = new() { Column = "shift_name", DataType = typeof(string), Operators = new() { "eq", "contains" } },
             };
 
         /// <summary>

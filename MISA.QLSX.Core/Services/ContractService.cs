@@ -23,8 +23,17 @@ namespace MISA.QLSX.Core.Services
 
             contract.UpdatedAt = DateTime.Now;
 
-            if (contract.IsSigned == true && contract.SignedAt == null)
-                contract.SignedAt = DateTime.Now;
+            if (contract.IsSigned == true)
+            {
+                if (contract.SignedAt == null)
+                    contract.SignedAt = DateTime.Now;
+
+                // Nếu đã ký thì tự động chuyển trạng thái sang active nếu đang là draft/null
+                if (string.IsNullOrEmpty(contract.ContractStatus) || contract.ContractStatus.ToLower() == "draft")
+                {
+                    contract.ContractStatus = "active";
+                }
+            }
 
             return Task.CompletedTask;
         }

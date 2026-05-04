@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -81,6 +81,9 @@ namespace MISA.QLSX.Core.Entities
         /// </summary>
         [Column("is_active")]
         public bool? IsActive { get; set; }
+
+        [Column("is_deleted")]
+        public Guid? IsDeleted { get; set; } = Guid.Empty;
 
         /// <summary>
         /// Người tạo

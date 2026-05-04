@@ -20,6 +20,8 @@ namespace MISA.QLSX.Core.Services
         private readonly IDeductionPolicyRepository _deductionPolicyRepository;
         private readonly IEmployeeTaxProfileRepository _employeeTaxProfileRepository;
         private readonly ITaxBracketRepository _taxBracketRepository;
+        private readonly IContractAllowanceRepository _contractAllowanceRepository;
+        private readonly IAllowanceRepository _allowanceRepository;
 
         private static readonly HashSet<string> AllowedStatuses = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -40,7 +42,9 @@ namespace MISA.QLSX.Core.Services
             ISalaryPolicyRepository salaryPolicyRepository,
             IDeductionPolicyRepository deductionPolicyRepository,
             IEmployeeTaxProfileRepository employeeTaxProfileRepository,
-            ITaxBracketRepository taxBracketRepository
+            ITaxBracketRepository taxBracketRepository,
+            IContractAllowanceRepository contractAllowanceRepository,
+            IAllowanceRepository allowanceRepository
         )
             : base(repo)
         {
@@ -55,6 +59,8 @@ namespace MISA.QLSX.Core.Services
             _deductionPolicyRepository = deductionPolicyRepository;
             _employeeTaxProfileRepository = employeeTaxProfileRepository;
             _taxBracketRepository = taxBracketRepository;
+            _contractAllowanceRepository = contractAllowanceRepository;
+            _allowanceRepository = allowanceRepository;
         }
 
         /// <summary>
@@ -232,6 +238,30 @@ namespace MISA.QLSX.Core.Services
             var taxProfiles = await _employeeTaxProfileRepository.GetEffectiveByEmployeesAsync(employeeIds, periodEnd);
             var effectiveTaxBrackets = await _taxBracketRepository.GetEffectiveAtAsync(periodStart);
             var allPayrollItems = await _payrollItemRepository.GetByPayrollIdsAsync(payrollIds);
+            
+            // Tải phụ cấp của các hợp đồng
+            var contractIds = contracts
+                .Where(c => c.ContractId != null)
+                .Select(c => c.ContractId!.Value)
+                .Distinct()
+                .ToList();
+            var contractAllowances = contractIds.Count > 0 
+                ? await _contractAllowanceRepository.GetByContractIdsAsync(contractIds)
+                : new List<ContractAllowance>();
+            
+            // Tải thông tin chi tiết phụ cấp
+            var allowanceIds = contractAllowances
+                .Where(ca => ca.AllowanceId != null)
+                .Select(ca => ca.AllowanceId!.Value)
+                .Distinct()
+                .ToList();
+            var allowances = allowanceIds.Count > 0
+                ? await _allowanceRepository.GetByIdsAsync(allowanceIds)
+                : new List<Allowance>();
+            
+            var allowanceByIdMap = allowances
+                .Where(a => a.AllowanceId != null)
+                .ToDictionary(a => a.AllowanceId!.Value);
 
             // ----------------------------------------------------------------
             // BƯỚC 3: Chọn policy/bảng thuế hiệu lực tại ngày bắt đầu kỳ
@@ -310,6 +340,7 @@ namespace MISA.QLSX.Core.Services
                 decimal baseSalaryAmount = 0;
                 decimal insuranceSalaryBase = 0;
                 decimal contractBusinessDaysTotal = 0;
+                decimal totalAllowanceAmount = 0;
 
                 foreach (var segment in contractSegments)
                 {
@@ -329,6 +360,34 @@ namespace MISA.QLSX.Core.Services
                     // insuranceSalaryBase: cộng dồn theo cùng logic pro-rate.
                     var insuranceDaily = (segment.Contract.InsuranceSalary ?? 0m) / standardWorkdays;
                     insuranceSalaryBase += insuranceDaily * segmentBusinessDays;
+
+                    // Tính phụ cấp cho đoạn hợp đồng này
+                    if (segment.Contract.ContractId != null)
+                    {
+                        var segmentAllowances = contractAllowances
+                            .Where(ca => ca.ContractId == segment.Contract.ContractId)
+                            .ToList();
+
+                        foreach (var ca in segmentAllowances)
+                        {
+                            if (ca.AllowanceId != null && allowanceByIdMap.TryGetValue(ca.AllowanceId.Value, out var allowance))
+                            {
+                                decimal segmentAllowanceAmount = 0;
+                                if (allowance.CalculationType == "FIXED")
+                                {
+                                    // Phụ cấp cố định: cộng toàn bộ
+                                    segmentAllowanceAmount = allowance.Amount ?? 0m;
+                                }
+                                else if (allowance.CalculationType == "PERCENT")
+                                {
+                                    // Phụ cấp theo % lương: tính dựa trên lương cơ bản của đoạn
+                                    var percentAllowance = segmentDailySalary * segmentBusinessDays * ((allowance.Percent ?? 0m) / 100m);
+                                    segmentAllowanceAmount = percentAllowance;
+                                }
+                                totalAllowanceAmount += segmentAllowanceAmount;
+                            }
+                        }
+                    }
                 }
 
                 // ----------------------------------------------------------------
@@ -361,9 +420,9 @@ namespace MISA.QLSX.Core.Services
                 // overtimeAddition: tiền làm thêm = giờ OT * đơn giá giờ * hệ số OT ngày thường.
                 //   OvertimeMultiplierWeekday mặc định 1.5 nếu policy không khai.
 
-                // totalAllowance: phụ cấp cố định (tạm = 0; chưa tích hợp contract_allowance).
+                // totalAllowance: phụ cấp cố định + theo % lương được tính từ contract_allowance.
                 // grossSalary   : lương gộp = baseSalary + allowance + addition - deduction.
-                var totalAllowance = 0m;
+                var totalAllowance = totalAllowanceAmount;
                 var grossSalary = baseSalaryAmount + totalAllowance + totalAddition - totalDeduction;
 
                 // ----------------------------------------------------------------
@@ -674,7 +733,8 @@ namespace MISA.QLSX.Core.Services
         {
             return contract.IsSigned == true
                 && contract.SignedAt != null
-                && string.Equals(contract.ContractStatus, "active", StringComparison.OrdinalIgnoreCase);
+                && (string.Equals(contract.ContractStatus, "active", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(contract.ContractStatus, "signed", StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>

@@ -44,13 +44,22 @@ namespace MISA.QLSX.Core.Services
 
             employee.EmployeeId = employee.EmployeeId ?? Guid.NewGuid();
 
+            // Kiểm tra xem account với code này đã tồn tại chưa
+            if (await _accountRepository.IsValueExistAsync("account_code", employee.EmployeeCode))
+            {
+                throw new ValidateException(
+                    "AccountCode duplicate",
+                    $"Tài khoản với mã {employee.EmployeeCode} đã tồn tại trong hệ thống. Vui lòng sử dụng mã nhân viên khác."
+                );
+            }
+
             // Tạo account mặc định cho nhân viên
             var account = new Account
             {
                 AccountId = employee.AccountId ?? Guid.NewGuid(),
                 AccountCode = employee.EmployeeCode,
-                Username = employee.Email ?? employee.EmployeeCode,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Misa@123"),
+                Username = employee.EmployeeCode,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
                 RoleId = DefaultEmployeeRoleId,
                 IsActive = true,
                 CreatedAt = DateTime.Now,
@@ -143,6 +152,19 @@ namespace MISA.QLSX.Core.Services
                 )
             )
                 throw new ValidateException("EmployeeCode duplicate", "Mã nhân viên đã tồn tại");
+
+            // Kiểm tra trùng mã tài khoản (chỉ khi insert mới hoặc đổi mã)
+            if (
+                await _accountRepository.IsValueExistAsync(
+                    "account_code",
+                    employee.EmployeeCode,
+                    employee.AccountId
+                )
+            )
+                throw new ValidateException(
+                    "AccountCode duplicate",
+                    "Mã nhân viên đã được sử dụng cho một tài khoản khác"
+                );
         }
 
         /// <summary>
@@ -153,6 +175,15 @@ namespace MISA.QLSX.Core.Services
         {
             var employees = await GetAllAsync();
             return employees.Where(employee => employee.ContractId == null).ToList();
+        }
+
+        /// <summary>
+        /// Lấy danh sách cán bộ đại diện ký hợp đồng (Phòng HR).
+        /// </summary>
+        /// <returns>Danh sách cán bộ.</returns>
+        public async Task<List<Employee>> GetRepresentativesAsync()
+        {
+            return await _employeeRepository.GetEmployeesByRoleAsync("HR");
         }
     }
 }

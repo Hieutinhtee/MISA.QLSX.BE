@@ -83,6 +83,12 @@ namespace MISA.QLSX.Core.Entities
         [Column("terminated_at")]
         public DateTime? TerminatedAt { get; set; }
 
+        [Column("shift_id")]
+        public Guid? ShiftId { get; set; }
+
+        [NotMapped]
+        public string? ShiftName { get; set; }
+
         [Column("created_at")]
         public DateTime? CreatedAt { get; set; }
 

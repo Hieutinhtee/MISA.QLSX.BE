@@ -12,5 +12,11 @@ namespace MISA.QLSX.Core.Interfaces.Service
         /// </summary>
         /// <returns>Danh sách nhân viên có ContractId = null.</returns>
         Task<List<Employee>> GetEmployeesWithoutContractAsync();
+
+        /// <summary>
+        /// Lấy danh sách cán bộ đại diện ký hợp đồng (Phòng HR).
+        /// </summary>
+        /// <returns>Danh sách cán bộ.</returns>
+        Task<List<Employee>> GetRepresentativesAsync();
     }
 }

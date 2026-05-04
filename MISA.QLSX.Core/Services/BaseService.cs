@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -95,6 +95,23 @@ namespace MISA.QLSX.Core.Services
         /// <returns>Task hoàn thành sau xử lí.</returns>
         protected virtual Task BeforeSaveAsync(T entity, bool isUpdate = false)
         {
+            var properties = typeof(T).GetProperties();
+            var now = DateTime.Now;
+
+            // Xử lý các trường thời gian
+            var createdAtProp = properties.FirstOrDefault(p => p.Name == "CreatedAt");
+            var updatedAtProp = properties.FirstOrDefault(p => p.Name == "UpdatedAt");
+
+            if (!isUpdate && createdAtProp != null && createdAtProp.CanWrite)
+            {
+                createdAtProp.SetValue(entity, now);
+            }
+
+            if (updatedAtProp != null && updatedAtProp.CanWrite)
+            {
+                updatedAtProp.SetValue(entity, now);
+            }
+
             return Task.CompletedTask;
         }
 
@@ -124,17 +141,27 @@ namespace MISA.QLSX.Core.Services
             await ValidateAsync(entity, null);
             await BeforeSaveAsync(entity, false);
 
-            // Lấy tất cả property của entity
+            // Tự động gán ID cho khóa chính nếu chưa có
             var properties = typeof(T).GetProperties();
-            foreach (var prop in properties)
-            {
-                var propType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+            var keyProp = properties.FirstOrDefault(p => p.GetCustomAttributes(typeof(KeyAttribute), true).Any());
 
-                if (propType == typeof(Guid))
+            if (keyProp != null && keyProp.PropertyType == typeof(Guid?))
+            {
+                var currentVal = keyProp.GetValue(entity) as Guid?;
+                if (currentVal == null || currentVal == Guid.Empty)
                 {
-                    prop.SetValue(entity, Guid.NewGuid());
+                    keyProp.SetValue(entity, Guid.NewGuid());
                 }
             }
+            else if (keyProp != null && keyProp.PropertyType == typeof(Guid))
+            {
+                var currentVal = (Guid)keyProp.GetValue(entity)!;
+                if (currentVal == Guid.Empty)
+                {
+                    keyProp.SetValue(entity, Guid.NewGuid());
+                }
+            }
+
             return await _repo.InsertAsync(entity);
         }
 

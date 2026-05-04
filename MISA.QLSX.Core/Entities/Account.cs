@@ -53,6 +53,8 @@ namespace MISA.QLSX.Core.Entities
         [Column("last_login_at")]
         public DateTime? LastLoginAt { get; set; }
 
+        [Column("is_deleted")]
+        public Guid? IsDeleted { get; set; } = Guid.Empty;
         /// <summary>
         /// Thời điểm tạo tài khoản
         /// </summary>

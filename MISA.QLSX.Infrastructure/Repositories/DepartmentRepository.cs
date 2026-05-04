@@ -1,4 +1,6 @@
+using Dapper;
 using MISA.QLSX.Core.DTOs.Requests;
+using MISA.QLSX.Core.DTOs.Responses;
 using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Core.Interfaces.Repository;
 using MISA.QLSX.Infrastructure.Connection;
@@ -46,5 +48,49 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
             };
+
+        public override async Task<Department?> GetById(Guid id)
+        {
+            using var conn = Connection;
+            var sql = $@"SELECT d.*, e.full_name AS ManagerEmployeeName 
+                         FROM department d
+                         LEFT JOIN employee e ON d.manager_employee_id = e.employee_id
+                         WHERE d.department_id = @Id {SoftDeleteFilter("d.")}";
+            return await conn.QueryFirstOrDefaultAsync<Department>(sql, new { Id = id });
+        }
+
+        public override async Task<PagingResponse<Department>> QueryPagingAsync(QueryRequest request)
+        {
+            using var conn = Connection;
+            var (where, parameters) = BuildWhereClause(request.Filters, request.Search, "d.");
+            var whereClause = string.IsNullOrEmpty(where) ? "" : "AND " + where;
+
+            var sqlData = $@"SELECT d.*, e.full_name AS ManagerEmployeeName 
+                             FROM department d
+                             LEFT JOIN employee e ON d.manager_employee_id = e.employee_id
+                             WHERE 1=1 {whereClause}
+                             ORDER BY d.created_at DESC
+                             LIMIT @Offset, @PageSize";
+
+            var sqlTotal = $@"SELECT COUNT(*) FROM department d
+                              WHERE 1=1 {whereClause}";
+
+            parameters.Add("Offset", ((request.Page ?? 1) - 1) * (request.PageSize ?? 20));
+            parameters.Add("PageSize", request.PageSize ?? 20);
+
+            var data = await conn.QueryAsync<Department>(sqlData, parameters);
+            var total = await conn.ExecuteScalarAsync<int>(sqlTotal, parameters);
+
+            return new PagingResponse<Department>
+            {
+                Data = data.AsList(),
+                Meta = new Meta
+                {
+                    Total = total,
+                    Page = request.Page ?? 1,
+                    PageSize = request.PageSize ?? 20
+                }
+            };
+        }
     }
 }

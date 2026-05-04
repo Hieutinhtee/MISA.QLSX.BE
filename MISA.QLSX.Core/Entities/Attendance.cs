@@ -22,11 +22,26 @@ namespace MISA.QLSX.Core.Entities
         [Column("attendance_date")]
         public DateTime? AttendanceDate { get; set; }
 
+        [Column("check_in")]
+        public TimeSpan? CheckIn { get; set; }
+
+        [Column("check_out")]
+        public TimeSpan? CheckOut { get; set; }
+
+        [Column("late_minutes")]
+        public int? LateMinutes { get; set; }
+
+        [Column("early_leave_minutes")]
+        public int? EarlyLeaveMinutes { get; set; }
+
         [Column("working_hours")]
         public decimal? WorkingHours { get; set; }
 
         [Column("overtime_hours")]
         public decimal? OvertimeHours { get; set; }
+
+        [Column("status")]
+        public string? Status { get; set; }
 
         [Column("penalty_amount")]
         public decimal? PenaltyAmount { get; set; }

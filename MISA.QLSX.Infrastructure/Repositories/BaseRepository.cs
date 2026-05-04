@@ -38,6 +38,9 @@ namespace MISA.QLSX.Infrastructure.Repositories
         //Tên cột dùng để sắp xếp mặc định
         protected readonly string _defaultSortFiled;
 
+        // Cờ xóa mềm: true nếu entity có cột is_deleted
+        protected readonly bool _hasSoftDelete;
+
         // ===== Normalize paging =====
         const int DEFAULT_PAGE = 1;
         const int DEFAULT_PAGE_SIZE = 20;
@@ -77,6 +80,16 @@ namespace MISA.QLSX.Infrastructure.Repositories
             // Nếu có attribute [Column("crm_customer_id")] → dùng tên cột
             // Nếu không có → dùng tên property
             _idColumn = colAttr?.Name ?? ToSnakeCase(keyProp.Name);
+
+            //  Phát hiện entity có hỗ trợ xóa mềm (có cột is_deleted) hay không
+            _hasSoftDelete = type.GetProperties()
+                .Any(p =>
+                    string.Equals(
+                        p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name),
+                        "is_deleted",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                );
         }
 
         private static string ResolveDefaultSortField(Type type, string tableName)
@@ -102,6 +115,16 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// Mặc định là bảng chính, repository con có thể override để đọc từ VIEW.
         /// </summary>
         protected virtual string GetReadTableName() => _tableName;
+
+        /// <summary>
+        /// Trả về đoạn SQL lọc bản ghi chưa xóa mềm.
+        /// Nếu entity không có cột is_deleted thì trả về chuỗi rỗng.
+        /// </summary>
+        /// <param name="alias">Tiền tố alias bảng (VD: "e."), mặc định rỗng.</param>
+        protected virtual string SoftDeleteFilter(string alias = "")
+        {
+            return _hasSoftDelete ? $" AND {alias}is_deleted = '00000000-0000-0000-0000-000000000000'" : "";
+        }
 
         /// <summary>
         /// Phương thức helper để chuyển tên class sang snake_case (ví dụ: Customer → customer).
@@ -164,7 +187,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             // Sử dụng using để tự động đóng connection sau khi dùng xong
             using var conn = Connection;
             // SQL chỉ lấy các record chưa xóa (is_deleted = 0)
-            var sql = $"SELECT * FROM {GetReadTableName()} ORDER BY {_defaultSortFiled} DESC";
+            var sql = $"SELECT * FROM {GetReadTableName()} WHERE 1=1 {SoftDeleteFilter()} ORDER BY {_defaultSortFiled} DESC";
             var res = await conn.QueryAsync<T>(sql);
             return res.ToList();
         }
@@ -180,12 +203,16 @@ namespace MISA.QLSX.Infrastructure.Repositories
         {
             using var conn = Connection;
 
-            // Lấy danh sách property để mapping
+            // Lấy danh sách property để mapping (bỏ qua is_deleted, để DB tự set default)
             var properties = typeof(T)
                 .GetProperties()
                 .Where(p =>
-                    p.CanRead && p.CanWrite && p.GetCustomAttribute<NotMappedAttribute>() == null
-                )
+                {
+                    if (!p.CanRead || !p.CanWrite) return false;
+                    if (p.GetCustomAttribute<NotMappedAttribute>() != null) return false;
+                    var colName = p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name);
+                    return colName != "is_deleted";
+                })
                 .ToList();
 
             // Tạo chuỗi columns từ attribute Name hoặc tên property (snake_case)
@@ -238,7 +265,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             if (keyProp == null)
                 return Guid.Empty;
 
-            // Lấy danh sách property có [ColumnName] nhưng bỏ cột key, cột ngày tạo, tạo bởi ai
+            // Lấy danh sách property có [ColumnName] nhưng bỏ cột key, cột ngày tạo, tạo bởi ai, và is_deleted
             var properties = typeof(T)
                 .GetProperties()
                 .Where(p =>
@@ -252,7 +279,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     var columnName =
                         p.GetCustomAttribute<ColumnAttribute>()?.Name ?? ToSnakeCase(p.Name);
 
-                    return columnName != "created_by" && columnName != "created_at";
+                    return columnName != "created_by" && columnName != "created_at" && columnName != "is_deleted";
                 })
                 .ToList();
 
@@ -377,15 +404,27 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
         /// <summary>
         /// Xóa mềm entity theo Id (async, set is_deleted = 1).
+        /// Nếu entity không hỗ trợ xóa mềm thì xóa cứng.
         /// Created by TMHieu - 27/2/2026
         /// </summary>
-        /// <param name="id">Id của entity cần xóa mềm.</param>
+        /// <param name="id">Id của entity cần xóa.</param>
         /// <returns>Số record bị ảnh hưởng (thường là 1 hoặc 0).</returns>
         public virtual async Task<int> DeleteAsync(Guid id)
         {
             using var conn = Connection;
-            var sql = $"DELETE FROM {_tableName} WHERE {_idColumn} = @Id";
-            return await conn.ExecuteAsync(sql, new { Id = id });
+
+            string sql;
+            if (_hasSoftDelete)
+            {
+                // Khi xóa mềm, set is_deleted = chính ID của bản ghi để tránh trùng UNIQUE key
+                sql = $"UPDATE {_tableName} SET is_deleted = {_idColumn}, updated_at = @Now WHERE {_idColumn} = @Id";
+                return await conn.ExecuteAsync(sql, new { Id = id, Now = DateTime.Now });
+            }
+            else
+            {
+                sql = $"DELETE FROM {_tableName} WHERE {_idColumn} = @Id";
+                return await conn.ExecuteAsync(sql, new { Id = id });
+            }
         }
 
         /// <summary>
@@ -401,12 +440,20 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
             using var conn = Connection;
 
-            var sql =
-                $@"DELETE FROM `{_tableName}`
-                         WHERE `{_idColumn}` IN @Ids;
-            ";
-
-            return await conn.ExecuteAsync(sql, new { Ids = ids });
+            string sql;
+            if (_hasSoftDelete)
+            {
+                sql = $@"UPDATE `{_tableName}`
+                         SET `is_deleted` = `{_idColumn}`, `updated_at` = @Now
+                         WHERE `{_idColumn}` IN @Ids;";
+                return await conn.ExecuteAsync(sql, new { Ids = ids, Now = DateTime.Now });
+            }
+            else
+            {
+                sql = $@"DELETE FROM `{_tableName}`
+                         WHERE `{_idColumn}` IN @Ids;";
+                return await conn.ExecuteAsync(sql, new { Ids = ids });
+            }
         }
 
         /// <summary>
@@ -416,11 +463,11 @@ namespace MISA.QLSX.Infrastructure.Repositories
         /// </summary>
         /// <param name="id">Id của entity.</param>
         /// <returns>Entity T nếu tồn tại.</returns>
-        public async Task<T?> GetById(Guid id)
+        public virtual async Task<T?> GetById(Guid id)
         {
             using var conn = Connection;
 
-            var sql = $@" SELECT * FROM {GetReadTableName()} WHERE {_idColumn} = @Id;";
+            var sql = $@"SELECT * FROM {GetReadTableName()} WHERE {_idColumn} = @Id {SoftDeleteFilter()};";
 
             var entity = await conn.QueryFirstOrDefaultAsync<T>(sql, new { Id = id });
             return entity;
@@ -479,7 +526,8 @@ namespace MISA.QLSX.Infrastructure.Repositories
                 $@" SELECT COUNT(1)
                     FROM {_tableName}
                     WHERE {columnName} = @Value
-                    AND (@IgnoreId IS NULL OR {_idColumn} <> @IgnoreId);";
+                    AND (@IgnoreId IS NULL OR {_idColumn} <> @IgnoreId)
+                    {SoftDeleteFilter()};";
 
             // 6) Thực thi và trả về kết quả
             var count = await conn.ExecuteScalarAsync<int>(
@@ -592,28 +640,26 @@ namespace MISA.QLSX.Infrastructure.Repositories
         //    };
         //}
 
-        public virtual async Task<PagingResponse<T>> QueryPagingAsync(QueryRequest request)
+        protected (string, DynamicParameters) BuildWhereClause(List<FilterCondition>? filters, string? search, string alias = "")
         {
-            using var conn = Connection;
             var searchFields = GetSearchFields();
-
             var param = new DynamicParameters();
-            var where = " WHERE 1=1 ";
+            var where = $" 1=1 {SoftDeleteFilter(alias)}";
 
             int index = 0;
 
-            //Search
-            if (!string.IsNullOrWhiteSpace(request.Search) && searchFields.Any())
+            // Search
+            if (!string.IsNullOrWhiteSpace(search) && searchFields.Any())
             {
-                var likeParts = searchFields.Select(f => $"{f} LIKE @SearchStr");
+                var likeParts = searchFields.Select(f => $"{alias}{f} LIKE @SearchStr");
                 where += " AND (" + string.Join(" OR ", likeParts) + ") ";
-                param.Add("@SearchStr", $"%{request.Search}%");
+                param.Add("@SearchStr", $"%{search}%");
             }
 
             // Filter
-            if (request.Filters != null && request.Filters.Any())
+            if (filters != null && filters.Any())
             {
-                foreach (var filter in request.Filters)
+                foreach (var filter in filters)
                 {
                     if (!FieldMap.TryGetValue(filter.Field, out var map))
                         continue;
@@ -648,7 +694,19 @@ namespace MISA.QLSX.Infrastructure.Repositories
                             }
 
                             if (value != null)
-                                value = Convert.ChangeType(value, map.DataType);
+                            {
+                                if (map.DataType == typeof(Guid))
+                                {
+                                    if (Guid.TryParse(value.ToString(), out var guidValue))
+                                    {
+                                        value = guidValue;
+                                    }
+                                }
+                                else
+                                {
+                                    value = Convert.ChangeType(value, map.DataType);
+                                }
+                            }
                         }
                         catch
                         {
@@ -662,43 +720,43 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     switch (filter.Operator)
                     {
                         case "eq":
-                            where += $" AND {map.Column} = {paramName}";
+                            where += $" AND {alias}{map.Column} = {paramName}";
                             param.Add(paramName, value);
                             break;
 
                         case "lt":
-                            where += $" AND {map.Column} < {paramName}";
+                            where += $" AND {alias}{map.Column} < {paramName}";
                             param.Add(paramName, value);
                             break;
 
                         case "lte":
-                            where += $" AND {map.Column} <= {paramName}";
+                            where += $" AND {alias}{map.Column} <= {paramName}";
                             param.Add(paramName, value);
                             break;
 
                         case "gt":
-                            where += $" AND {map.Column} > {paramName}";
+                            where += $" AND {alias}{map.Column} > {paramName}";
                             param.Add(paramName, value);
                             break;
 
                         case "gte":
-                            where += $" AND {map.Column} >= {paramName}";
+                            where += $" AND {alias}{map.Column} >= {paramName}";
                             param.Add(paramName, value);
                             break;
 
                         case "contains":
-                            where += $" AND {map.Column} LIKE {paramName}";
+                            where += $" AND {alias}{map.Column} LIKE {paramName}";
                             param.Add(paramName, $"%{value}%");
                             break;
 
                         case "notcontains":
                             where +=
-                                $" AND ({map.Column} NOT LIKE {paramName} OR {map.Column} IS NULL)";
+                                $" AND ({alias}{map.Column} NOT LIKE {paramName} OR {alias}{map.Column} IS NULL)";
                             param.Add(paramName, $"%{value}%");
                             break;
 
                         case "starts":
-                            where += $" AND {map.Column} LIKE {paramName}";
+                            where += $" AND {alias}{map.Column} LIKE {paramName}";
                             param.Add(paramName, $"{value}%");
                             break;
 
@@ -730,6 +788,15 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     }
                 }
             }
+
+            return (where, param);
+        }
+
+        public virtual async Task<PagingResponse<T>> QueryPagingAsync(QueryRequest request)
+        {
+            using var conn = Connection;
+            var (where, param) = BuildWhereClause(request.Filters, request.Search);
+            var whereClause = $" WHERE {where}";
 
             // ===== SORT =====
 
@@ -767,11 +834,11 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
             // ===== COUNT =====
 
-            string sqlCount = $"SELECT COUNT(*) FROM {GetReadTableName()} {where}";
+            string sqlCount = $"SELECT COUNT(*) FROM {GetReadTableName()} {whereClause}";
 
             // ===== BASE SQL =====
 
-            string baseSql = $"SELECT * FROM {GetReadTableName()} {where} {orderClause}";
+            string baseSql = $"SELECT * FROM {GetReadTableName()} {whereClause} {orderClause}";
 
             // ===== PAGING =====
 
@@ -834,7 +901,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
             using var conn = Connection;
 
             // 1. WHERE cơ bản (chưa xóa mềm)
-            var where = $"";
+            var where = $" WHERE 1=1 {SoftDeleteFilter()}";
 
             // 2. Lọc theo type
             if (!string.IsNullOrWhiteSpace(type))

@@ -103,5 +103,17 @@ namespace MISA.QLSX.Api.Controllers
             var data = await _employeeService.GetEmployeesWithoutContractAsync();
             return Ok(new { data });
         }
+
+        /// <summary>
+        /// Lấy danh sách cán bộ đại diện ký hợp đồng (Phòng HR).
+        /// </summary>
+        /// <returns>Danh sách cán bộ.</returns>
+        [RequireRole("ADMIN", "HR")]
+        [HttpGet("representatives")]
+        public async Task<IActionResult> GetRepresentatives()
+        {
+            var data = await _employeeService.GetRepresentativesAsync();
+            return Ok(new { data });
+        }
     }
 }

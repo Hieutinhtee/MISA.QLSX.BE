@@ -4,6 +4,10 @@ using MISA.QLSX.Api.Authorization;
 using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.DTOs.Responses;
 using MISA.QLSX.Core.Interfaces.Service;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace MISA.QLSX.Api.Controllers
 {
@@ -18,21 +22,12 @@ namespace MISA.QLSX.Api.Controllers
             _attendanceService = service;
         }
 
-        /// <summary>
-        /// Lấy toàn bộ dữ liệu chấm công, EMPLOYEE không được gọi endpoint này.
-        /// </summary>
-        /// <returns>Danh sách chấm công.</returns>
         [RequireRole("ADMIN", "HR", "MANAGER")]
         public override async Task<IActionResult> GetAll()
         {
             return await base.GetAll();
         }
 
-        /// <summary>
-        /// Lấy dữ liệu chấm công phân trang với ràng buộc EMPLOYEE chỉ xem bản thân.
-        /// </summary>
-        /// <param name="request">Yêu cầu phân trang/tìm kiếm/lọc.</param>
-        /// <returns>Dữ liệu chấm công theo quyền truy cập.</returns>
         [HttpPost("paging")]
         public override async Task<PagingResponse<Attendance>> GetPaging(
             [FromBody] QueryRequest request
@@ -53,6 +48,29 @@ namespace MISA.QLSX.Api.Controllers
             }
 
             return await _attendanceService.QueryPagingAsync(request);
+        }
+
+        [HttpGet("dashboard")]
+        [RequireRole("ADMIN", "HR", "MANAGER")]
+        public async Task<IActionResult> GetDashboard([FromQuery] DateTime? date)
+        {
+            var res = await _attendanceService.GetAttendanceDashboard(date ?? DateTime.Now);
+            return Ok(res);
+        }
+
+        [HttpGet("employee/{employeeId}/calendar")]
+        public async Task<IActionResult> GetEmployeeCalendar(Guid employeeId, [FromQuery] int month, [FromQuery] int year)
+        {
+            var role = HttpContext.Session.GetString("role_code")?.ToUpperInvariant();
+            var sessionEmployeeId = HttpContext.Session.GetString("employee_id");
+
+            if (role == "EMPLOYEE" && (!Guid.TryParse(sessionEmployeeId, out var parsedId) || parsedId != employeeId))
+            {
+                return Forbid();
+            }
+
+            var res = await _attendanceService.GetEmployeeCalendar(employeeId, month, year);
+            return Ok(res);
         }
     }
 }

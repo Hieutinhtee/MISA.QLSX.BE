@@ -35,6 +35,9 @@ namespace MISA.QLSX.Core.Entities
         [Column("description")]
         public string? Description { get; set; }
 
+        [Column("is_deleted")]
+        public Guid? IsDeleted { get; set; } = Guid.Empty;
+
         /// <summary>
         /// Người tạo.
         /// </summary>

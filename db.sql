@@ -4,6 +4,7 @@ USE `misa_qlsx`;
 SET NAMES utf8mb4;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET FOREIGN_KEY_CHECKS = 0;
+SET SQL_SAFE_UPDATES = 0;
 START TRANSACTION;
 
 DROP TABLE IF EXISTS `contract_history`;
@@ -45,15 +46,17 @@ CREATE TABLE `shift` (
   `working_hours` DECIMAL(5,2) NOT NULL COMMENT 'Cột working_hours: Tổng số giờ làm việc được tính công',
   `break_hours` DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT 'Cột break_hours: Tổng số giờ nghỉ của ca',
   `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_active: Trạng thái hoạt động, 1 là hoạt động, 0 là ngừng',
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 chưa xóa, Id bản ghi là đã xóa',
   `description` VARCHAR(255) DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả thêm cho ca làm việc',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo bản ghi',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất',
   PRIMARY KEY (`shift_id`),
-  UNIQUE KEY `uk_shift_code` (`shift_code`),
+  UNIQUE KEY `uk_shift_code` (`shift_code`, `is_deleted`),
   KEY `idx_shift_name` (`shift_name`),
-  KEY `idx_shift_active` (`is_active`)
+  KEY `idx_shift_active` (`is_active`),
+  KEY `idx_shift_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng shift: Lưu danh mục ca làm việc trong hệ thống';
 
 
@@ -62,13 +65,15 @@ CREATE TABLE `degree` (
   `degree_code` VARCHAR(20) NOT NULL COMMENT 'Cột degree_code: Mã bằng cấp duy nhất để tra cứu',
   `degree_name` VARCHAR(100) NOT NULL COMMENT 'Cột degree_name: Tên bằng cấp',
   `description` TEXT DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả thêm cho bằng cấp',
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 chưa xóa, Id bản ghi là đã xóa',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo bản ghi',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu bằng cấp',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của bằng cấp',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của bằng cấp',
   PRIMARY KEY (`degree_id`),
-  UNIQUE KEY `uk_degree_code` (`degree_code`),
-  UNIQUE KEY `uk_degree_name` (`degree_name`)
+  UNIQUE KEY `uk_degree_code` (`degree_code`, `is_deleted`),
+  UNIQUE KEY `uk_degree_name` (`degree_name`, `is_deleted`),
+  KEY `idx_degree_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng degree: Lưu danh mục bằng cấp chuyên môn';
 
 CREATE TABLE `position` (
@@ -77,13 +82,15 @@ CREATE TABLE `position` (
   `position_name` VARCHAR(100) NOT NULL COMMENT 'Cột position_name: Tên chức vụ',
   `description` TEXT DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả thêm cho chức vụ',
   `allowance` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột allowance: Mức phụ cấp chức vụ',
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 chưa xóa, Id bản ghi là đã xóa',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo bản ghi',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu chức vụ',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của chức vụ',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của chức vụ',
   PRIMARY KEY (`position_id`),
-  UNIQUE KEY `uk_position_code` (`position_code`),
-  UNIQUE KEY `uk_position_name` (`position_name`)
+  UNIQUE KEY `uk_position_code` (`position_code`, `is_deleted`),
+  UNIQUE KEY `uk_position_name` (`position_name`, `is_deleted`),
+  KEY `idx_position_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng position: Lưu danh mục chức vụ công việc';
 
 CREATE TABLE `allowance` (
@@ -150,6 +157,7 @@ CREATE TABLE `contract` (
   `contract_status` ENUM('draft','signed','active','expired','terminated') NOT NULL DEFAULT 'draft' COMMENT 'Cột contract_status: Trạng thái hợp đồng: nháp, đã ký, hiệu lực, hết hạn, chấm dứt',
   `end_date` DATE DEFAULT NULL COMMENT 'Cột end_date: Ngày kết thúc hợp đồng',
   `terminated_at` DATETIME DEFAULT NULL COMMENT 'Cột terminated_at: Thời điểm chấm dứt hợp đồng',
+  `shift_id` CHAR(36) DEFAULT NULL COMMENT 'Cột shift_id: Khóa ngoại tham chiếu ca làm việc',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo hợp đồng',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo hợp đồng',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của hợp đồng',
@@ -164,7 +172,8 @@ CREATE TABLE `contract` (
   KEY `idx_contract_is_signed` (`is_signed`),
   KEY `idx_contract_status` (`contract_status`),
   KEY `idx_contract_effective_end` (`employee_id`,`effective_date`,`end_date`),
-  CONSTRAINT `fk_contract_template` FOREIGN KEY (`template_id`) REFERENCES `contract_template` (`template_id`) ON UPDATE CASCADE
+  CONSTRAINT `fk_contract_template` FOREIGN KEY (`template_id`) REFERENCES `contract_template` (`template_id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_contract_shift` FOREIGN KEY (`shift_id`) REFERENCES `shift` (`shift_id`) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng contract: Lưu thông tin hợp đồng lao động của nhân viên';
 
 CREATE TABLE `contract_allowance` (
@@ -188,13 +197,15 @@ CREATE TABLE `role` (
   `role_code` VARCHAR(20) NOT NULL COMMENT 'Cột role_code: Mã vai trò duy nhất để tra cứu',
   `role_name` VARCHAR(100) NOT NULL COMMENT 'Cột role_name: Tên vai trò',
   `description` VARCHAR(255) DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả thêm cho vai trò',
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 chưa xóa, Id bản ghi là đã xóa',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo vai trò',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu vai trò',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của vai trò',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của vai trò',
   PRIMARY KEY (`role_id`),
-  UNIQUE KEY `uk_role_code` (`role_code`),
-  UNIQUE KEY `uk_role_name` (`role_name`)
+  UNIQUE KEY `uk_role_code` (`role_code`, `is_deleted`),
+  UNIQUE KEY `uk_role_name` (`role_name`, `is_deleted`),
+  KEY `idx_role_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng role: Lưu danh mục vai trò phân quyền';
 
 CREATE TABLE `account` (
@@ -205,15 +216,17 @@ CREATE TABLE `account` (
   `role_id` CHAR(36) NOT NULL COMMENT 'Cột role_id: Khóa ngoại tham chiếu vai trò',
   `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_active: Trạng thái tài khoản, 1 hoạt động, 0 bị khóa',
   `last_login_at` DATETIME DEFAULT NULL COMMENT 'Cột last_login_at: Thời điểm đăng nhập thành công gần nhất',
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 chưa xóa, Id bản ghi là đã xóa',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo tài khoản',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu tài khoản',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của tài khoản',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của tài khoản',
   PRIMARY KEY (`account_id`),
-  UNIQUE KEY `uk_account_code` (`account_code`),
-  UNIQUE KEY `uk_account_username` (`username`),
+  UNIQUE KEY `uk_account_code` (`account_code`, `is_deleted`),
+  UNIQUE KEY `uk_account_username` (`username`, `is_deleted`),
   KEY `idx_account_role_id` (`role_id`),
   KEY `idx_account_active` (`is_active`),
+  KEY `idx_account_deleted` (`is_deleted`),
   CONSTRAINT `fk_account_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng account: Lưu thông tin tài khoản đăng nhập';
 
@@ -223,14 +236,16 @@ CREATE TABLE `department` (
   `department_name` VARCHAR(100) NOT NULL COMMENT 'Cột department_name: Tên phòng ban',
   `description` TEXT DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả thêm cho phòng ban',
   `manager_employee_id` CHAR(36) DEFAULT NULL COMMENT 'Cột manager_employee_id: UUID nhân viên giữ vai trò trưởng phòng',
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 chưa xóa, Id bản ghi là đã xóa',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo phòng ban',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu phòng ban',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của phòng ban',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của phòng ban',
   PRIMARY KEY (`department_id`),
-  UNIQUE KEY `uk_department_code` (`department_code`),
-  UNIQUE KEY `uk_department_name` (`department_name`),
-  KEY `idx_department_manager_employee_id` (`manager_employee_id`)
+  UNIQUE KEY `uk_department_code` (`department_code`, `is_deleted`),
+  UNIQUE KEY `uk_department_name` (`department_name`, `is_deleted`),
+  KEY `idx_department_manager_employee_id` (`manager_employee_id`),
+  KEY `idx_department_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng department: Lưu danh mục phòng ban trong tổ chức';
 
 CREATE TABLE `employee` (
@@ -272,15 +287,16 @@ CREATE TABLE `employee` (
   `blood_group` VARCHAR(10) DEFAULT NULL COMMENT 'Cột blood_group: Nhóm máu',
   `health_status` VARCHAR(255) DEFAULT NULL COMMENT 'Cột health_status: Tình trạng sức khỏe',
   `social_insurance_number` VARCHAR(20) DEFAULT NULL COMMENT 'Cột social_insurance_number: Số sổ bảo hiểm xã hội',
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 chưa xóa, Id bản ghi là đã xóa',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo hồ sơ nhân viên',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu nhân viên',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của nhân viên',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của nhân viên',
   PRIMARY KEY (`employee_id`),
-  UNIQUE KEY `uk_employee_code` (`employee_code`),
-  UNIQUE KEY `uk_employee_national_id` (`national_id`),
-  UNIQUE KEY `uk_employee_account_id` (`account_id`),
-  UNIQUE KEY `uk_employee_email` (`email`),
+  UNIQUE KEY `uk_employee_code` (`employee_code`, `is_deleted`),
+  UNIQUE KEY `uk_employee_national_id` (`national_id`, `is_deleted`),
+  UNIQUE KEY `uk_employee_account_id` (`account_id`, `is_deleted`),
+  UNIQUE KEY `uk_employee_email` (`email`, `is_deleted`),
   KEY `idx_employee_department_id` (`department_id`),
   KEY `idx_employee_shift_id` (`shift_id`),
   KEY `idx_employee_degree_id` (`degree_id`),
@@ -288,6 +304,7 @@ CREATE TABLE `employee` (
   KEY `idx_employee_contract_employee` (`contract_id`,`employee_id`),
   KEY `idx_employee_position_id` (`position_id`),
   KEY `idx_employee_phone_number` (`phone_number`),
+  KEY `idx_employee_deleted` (`is_deleted`),
   CONSTRAINT `fk_employee_department` FOREIGN KEY (`department_id`) REFERENCES `department` (`department_id`) ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT `fk_employee_shift` FOREIGN KEY (`shift_id`) REFERENCES `shift` (`shift_id`) ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT `fk_employee_degree` FOREIGN KEY (`degree_id`) REFERENCES `degree` (`degree_id`) ON UPDATE CASCADE,
@@ -314,8 +331,13 @@ CREATE TABLE `attendance` (
   `employee_id` CHAR(36) NOT NULL COMMENT 'Cột employee_id: Khóa ngoại tham chiếu nhân viên',
   `shift_id` CHAR(36) DEFAULT NULL COMMENT 'Cột shift_id: Khóa ngoại tham chiếu ca làm việc trong ngày',
   `attendance_date` DATE NOT NULL COMMENT 'Cột attendance_date: Ngày chấm công',
+  `check_in` TIME DEFAULT NULL COMMENT 'Cột check_in: Giờ vào thực tế',
+  `check_out` TIME DEFAULT NULL COMMENT 'Cột check_out: Giờ ra thực tế',
+  `late_minutes` INT NOT NULL DEFAULT 0 COMMENT 'Cột late_minutes: Số phút đi muộn',
+  `early_leave_minutes` INT NOT NULL DEFAULT 0 COMMENT 'Cột early_leave_minutes: Số phút về sớm',
   `working_hours` DECIMAL(5,2) NOT NULL DEFAULT 0 COMMENT 'Cột working_hours: Số giờ làm việc thực tế',
   `overtime_hours` DECIMAL(5,2) NOT NULL DEFAULT 0 COMMENT 'Cột overtime_hours: Số giờ tăng ca',
+  `status` ENUM('present','absent','late','on_leave') NOT NULL DEFAULT 'present' COMMENT 'Cột status: Trạng thái chấm công',
   `penalty_amount` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột penalty_amount: Số tiền phạt bị trừ',
   `bonus_amount` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột bonus_amount: Số tiền thưởng được cộng',
   `net_income` DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT 'Cột net_income: Thu nhập thực nhận theo chấm công',
@@ -628,6 +650,131 @@ CREATE TABLE `contract_history` (
   CONSTRAINT `fk_contract_history_contract` FOREIGN KEY (`contract_id`) REFERENCES `contract` (`contract_id`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng contract_history: Lưu lịch sử thay đổi chi tiết của hợp đồng';
 
+-- Migration 003: Approval Workflow + Department Upgrade
+-- Created: 2026-05-02
+
+USE `misa_qlsx`;
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- =============================================
+-- 1. Bảng approval_request (yêu cầu phê duyệt)
+-- =============================================
+DROP TABLE IF EXISTS `approval_step`;
+DROP TABLE IF EXISTS `approval_request`;
+DROP TABLE IF EXISTS `department_member_history`;
+DROP TABLE IF EXISTS `department_manager_history`;
+
+CREATE TABLE `approval_request` (
+  `approval_request_id` CHAR(36) NOT NULL DEFAULT (UUID()),
+  `request_code` VARCHAR(30) NOT NULL COMMENT 'Mã yêu cầu tự sinh',
+  `request_type` ENUM(
+    'department_member_transfer',
+    'department_manager_change',
+    'contract_change',
+    'leave_request'
+  ) NOT NULL COMMENT 'Loại yêu cầu phê duyệt',
+  `title` VARCHAR(255) NOT NULL COMMENT 'Tiêu đề yêu cầu',
+  `description` TEXT DEFAULT NULL COMMENT 'Mô tả chi tiết',
+  `payload` JSON NOT NULL COMMENT 'Dữ liệu thay đổi cần áp dụng khi duyệt',
+  `effective_date` DATE DEFAULT NULL COMMENT 'Ngày có hiệu lực của thay đổi',
+  `status` ENUM('pending','approved','rejected','cancelled') NOT NULL DEFAULT 'pending',
+  `current_step` INT NOT NULL DEFAULT 1,
+  `total_steps` INT NOT NULL DEFAULT 1,
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `created_by` CHAR(36) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` CHAR(36) DEFAULT NULL,
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`approval_request_id`),
+  UNIQUE KEY `uk_request_code` (`request_code`),
+  KEY `idx_request_type` (`request_type`),
+  KEY `idx_request_status` (`status`),
+  KEY `idx_request_created_by` (`created_by`),
+  KEY `idx_request_deleted` (`is_deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng approval_request: Lưu yêu cầu phê duyệt chung cho mọi quy trình';
+
+-- =============================================
+-- 2. Bảng approval_step (bước phê duyệt)
+-- =============================================
+CREATE TABLE `approval_step` (
+  `approval_step_id` CHAR(36) NOT NULL DEFAULT (UUID()),
+  `approval_request_id` CHAR(36) NOT NULL,
+  `step_order` INT NOT NULL COMMENT 'Thứ tự bước (1, 2, ...)',
+  `approver_role` VARCHAR(20) NOT NULL COMMENT 'Role cần duyệt: ADMIN, HR, MANAGER',
+  `approver_id` CHAR(36) DEFAULT NULL COMMENT 'Người duyệt cụ thể (null = bất kỳ ai có role)',
+  `status` ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `comment` TEXT DEFAULT NULL,
+  `acted_at` DATETIME DEFAULT NULL,
+  `acted_by` CHAR(36) DEFAULT NULL,
+  PRIMARY KEY (`approval_step_id`),
+  KEY `idx_step_request` (`approval_request_id`),
+  KEY `idx_step_role` (`approver_role`),
+  KEY `idx_step_status` (`status`),
+  CONSTRAINT `fk_step_request` FOREIGN KEY (`approval_request_id`)
+    REFERENCES `approval_request` (`approval_request_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng approval_step: Lưu từng bước phê duyệt của yêu cầu';
+
+-- =============================================
+-- 3. Alter department: thêm is_active + inactive_effective_date
+-- =============================================
+ALTER TABLE `department`
+  ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1
+    COMMENT 'Trạng thái sử dụng: 1=đang sử dụng, 0=ngừng' AFTER `manager_employee_id`,
+  ADD COLUMN `inactive_effective_date` DATE DEFAULT NULL
+    COMMENT 'Ngày áp dụng ngừng sử dụng' AFTER `is_active`;
+
+-- =============================================
+-- 4. Bảng department_member_history
+-- =============================================
+CREATE TABLE `department_member_history` (
+  `history_id` CHAR(36) NOT NULL DEFAULT (UUID()),
+  `employee_id` CHAR(36) NOT NULL,
+  `department_id` CHAR(36) NOT NULL,
+  `action` ENUM('join','leave','transfer') NOT NULL,
+  `effective_date` DATE NOT NULL,
+  `approval_request_id` CHAR(36) DEFAULT NULL,
+  `note` TEXT DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` CHAR(36) DEFAULT NULL,
+  PRIMARY KEY (`history_id`),
+  KEY `idx_member_hist_emp` (`employee_id`),
+  KEY `idx_member_hist_dept` (`department_id`),
+  KEY `idx_member_hist_effective` (`effective_date`),
+  CONSTRAINT `fk_member_hist_emp` FOREIGN KEY (`employee_id`)
+    REFERENCES `employee` (`employee_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_member_hist_dept` FOREIGN KEY (`department_id`)
+    REFERENCES `department` (`department_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng department_member_history: Lịch sử thuyên chuyển thành viên phòng ban';
+
+-- =============================================
+-- 5. Bảng department_manager_history
+-- =============================================
+CREATE TABLE `department_manager_history` (
+  `history_id` CHAR(36) NOT NULL DEFAULT (UUID()),
+  `department_id` CHAR(36) NOT NULL,
+  `manager_employee_id` CHAR(36) NOT NULL,
+  `effective_date` DATE NOT NULL,
+  `end_date` DATE DEFAULT NULL,
+  `approval_request_id` CHAR(36) DEFAULT NULL,
+  `note` TEXT DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` CHAR(36) DEFAULT NULL,
+  PRIMARY KEY (`history_id`),
+  KEY `idx_mgr_hist_dept` (`department_id`),
+  KEY `idx_mgr_hist_effective` (`effective_date`),
+  CONSTRAINT `fk_mgr_hist_dept` FOREIGN KEY (`department_id`)
+    REFERENCES `department` (`department_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_mgr_hist_emp` FOREIGN KEY (`manager_employee_id`)
+    REFERENCES `employee` (`employee_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng department_manager_history: Lịch sử bổ nhiệm trưởng phòng';
+
+SET FOREIGN_KEY_CHECKS = 1;
+
 -- =========================================================
 
 -- =========================================================
@@ -665,15 +812,16 @@ INSERT INTO `contract_template` (`template_id`,`template_code`,`template_name`,`
 (UUID(),'TPL_OPEN','Mẫu hợp đồng không xác định thời hạn','Không thời hạn','Nội dung mẫu không thời hạn',1,1);
 
 INSERT INTO `role` (`role_id`,`role_code`,`role_name`,`description`) VALUES
-(UUID(),'ROLE_ADMIN','Quản trị viên','Toàn quyền hệ thống'),
-(UUID(),'ROLE_HR','Nhân sự','Quản lý hồ sơ nhân sự'),
-(UUID(),'ROLE_EMP','Nhân viên','Người dùng nhân viên');
+('0208f2f6-43e7-11f1-8388-d0c5d346d1a4','ADMIN','Quản trị viên','Toàn quyền hệ thống'),
+('1abcf2f6-43e7-11f1-8388-d0c5d346d1a4','HR','Nhân sự','Quản lý hồ sơ nhân sự'),
+('3abcf2f6-43e7-11f1-8388-d0c5d346d1a4','MANAGER','Quản lý','Quản lý phòng ban'),
+('4abcf2f6-43e7-11f1-8388-d0c5d346d1a4','EMPLOYEE','Nhân viên','Người dùng nhân viên');
 
 INSERT INTO `account` (`account_id`,`account_code`,`username`,`password_hash`,`role_id`,`is_active`) VALUES
-(UUID(),'ACC_ADMIN','admin','$2b$12$c5aggsyJ5ztAgCidkiawFO9CSNHfSULpZsC3goirv0lMS10QNWw6m',(SELECT role_id FROM role WHERE role_code='ROLE_ADMIN'),1),
-(UUID(),'ACC_HR01','hr','$2b$12$tBFQXJhmYIMjGZ84D1SZH.vaOPbOFyeyXgnfDjcnJ46D4WMvvyg0G',(SELECT role_id FROM role WHERE role_code='ROLE_HR'),1),
-(UUID(),'ACC_MGR01','manager','$2b$12$DcaI5cocW509bVHakUh9Q.pvZX7Z88aBkZNO/PR61lMu/5eOEC8vm',(SELECT role_id FROM role WHERE role_code='ROLE_HR'),1),
-(UUID(),'ACC_EMP01','nhanvien','$2b$12$4MLovO9KvVr9ig.MDhytyuG4EAWXyMjyaL9eX1pPhrZMdQ.Vg3sNa',(SELECT role_id FROM role WHERE role_code='ROLE_EMP'),1);
+(UUID(),'ACC_ADMIN','admin','$2b$12$c5aggsyJ5ztAgCidkiawFO9CSNHfSULpZsC3goirv0lMS10QNWw6m',(SELECT role_id FROM role WHERE role_code='ADMIN'),1),
+(UUID(),'ACC_HR01','hr','$2b$12$tBFQXJhmYIMjGZ84D1SZH.vaOPbOFyeyXgnfDjcnJ46D4WMvvyg0G',(SELECT role_id FROM role WHERE role_code='HR'),1),
+(UUID(),'ACC_MGR01','manager','$2b$12$DcaI5cocW509bVHakUh9Q.pvZX7Z88aBkZNO/PR61lMu/5eOEC8vm',(SELECT role_id FROM role WHERE role_code='MANAGER'),1),
+(UUID(),'ACC_EMP01','nhanvien','$2b$12$4MLovO9KvVr9ig.MDhytyuG4EAWXyMjyaL9eX1pPhrZMdQ.Vg3sNa',(SELECT role_id FROM role WHERE role_code='EMPLOYEE'),1);
 
 INSERT INTO `department` (`department_id`,`department_code`,`department_name`,`description`) VALUES
 (UUID(),'DEP_HR','Phòng nhân sự','Quản lý nhân sự và hành chính'),
@@ -692,32 +840,37 @@ INSERT INTO `employee` (
 SELECT
   UUID(),
   CONCAT('EMP', LPAD(n, 4, '0')),
-  ELT(MOD(n, 20) + 1, 
-    'Nguyễn Minh Tuấn', 'Trần Thu Trang', 'Trần Đức Hải', 'Nguyễn Mai Phương', 
-    'Lê Thanh Bình', 'Lê Thị Ngọc Ánh', 'Phạm Quốc Việt', 'Phạm Thanh Hương', 
-    'Hoàng Trọng Nghĩa', 'Hoàng Thúy Quỳnh', 'Vũ Tuấn Anh', 'Vũ Hà My', 
-    'Đặng Văn Khoa', 'Đặng Cẩm Tú', 'Bùi Xuân Bách', 'Bùi Thảo Ngọc', 
-    'Đỗ Tiến Đạt', 'Đỗ Mai Lan', 'Ngô Hoàng Phúc', 'Ngô Kim Liên'
+  ELT(n, 
+    'Nguyễn Văn An', 'Trần Thị Bình', 'Lê Văn Cường', 'Phạm Thị Dung', 'Hoàng Văn Hải',
+    'Đỗ Thị Hương', 'Ngô Văn Khoa', 'Lý Thị Lan', 'Vũ Văn Minh', 'Đặng Thị Ngọc',
+    'Bùi Văn Phương', 'Hồ Thị Quỳnh', 'Phan Văn Sơn', 'Trịnh Thị Thảo', 'Cao Văn Tuấn',
+    'Đào Thị Uyên', 'Mai Văn Việt', 'Nguyễn Thị Xuân'
   ),
-  CASE WHEN MOD(n,2)=0 THEN 'Nam' ELSE 'Nữ' END,
+  CASE WHEN n % 2 = 1 THEN 'Nam' ELSE 'Nữ' END,
   DATE_ADD('1990-01-01', INTERVAL n * 120 DAY),
   CONCAT('Số ', n, ' Tôn Thất Thuyết, Cầu Giấy, Hà Nội'),
   CONCAT('0987', LPAD(n, 6, '0')),
   CONCAT('emp', LPAD(n, 4, '0'), '@misa.com.vn'),
-  DATE_ADD('2023-01-01', INTERVAL n DAY),
-  CASE MOD(n,4)
+  CASE 
+    WHEN n <= 5 THEN DATE_ADD('2022-01-01', INTERVAL n DAY) -- NV lâu năm
+    WHEN n <= 10 THEN DATE_ADD('2024-06-01', INTERVAL n DAY) -- NV 3 năm (vẫn còn hạn tháng 3/2026)
+    WHEN n <= 13 THEN DATE_ADD('2022-01-01', INTERVAL n DAY) -- NV 3 năm (đã hết hạn năm 2025)
+    WHEN n <= 16 THEN DATE_ADD('2026-02-15', INTERVAL n DAY) -- NV thử việc 2 tháng (vẫn còn hạn)
+    ELSE DATE_ADD('2025-01-01', INTERVAL n DAY) -- NV thử việc 2 tháng (đã hết hạn)
+  END,
+  CASE (n % 4)
     WHEN 1 THEN (SELECT department_id FROM department WHERE department_code='DEP_HR')
     WHEN 2 THEN (SELECT department_id FROM department WHERE department_code='DEP_FIN')
     WHEN 3 THEN (SELECT department_id FROM department WHERE department_code='DEP_SALES')
     ELSE (SELECT department_id FROM department WHERE department_code='DEP_PROD')
   END,
-  CASE MOD(n,3)
+  CASE (n % 3)
     WHEN 1 THEN (SELECT shift_id FROM shift WHERE shift_code='SHIFT_AM')
     WHEN 2 THEN (SELECT shift_id FROM shift WHERE shift_code='SHIFT_PM')
     ELSE (SELECT shift_id FROM shift WHERE shift_code='SHIFT_HC')
   END,
   CONCAT('001090', LPAD(n, 6, '0')),
-  CASE MOD(n,4)
+  CASE (n % 4)
     WHEN 1 THEN (SELECT degree_id FROM degree WHERE degree_code='DEG_CAO_DANG')
     WHEN 2 THEN (SELECT degree_id FROM degree WHERE degree_code='DEG_DAI_HOC')
     WHEN 3 THEN (SELECT degree_id FROM degree WHERE degree_code='DEG_THAC_SI')
@@ -725,8 +878,8 @@ SELECT
   END,
   NULL,
   CASE
-    WHEN MOD(n,10)=0 THEN (SELECT position_id FROM position WHERE position_code='POS_MANAGER')
-    WHEN MOD(n,5)=0 THEN (SELECT position_id FROM position WHERE position_code='POS_TEAM_LEAD')
+    WHEN n = 1 THEN (SELECT position_id FROM position WHERE position_code='POS_MANAGER')
+    WHEN n % 5 = 0 THEN (SELECT position_id FROM position WHERE position_code='POS_TEAM_LEAD')
     ELSE (SELECT position_id FROM position WHERE position_code='POS_STAFF')
   END,
   CASE n
@@ -743,21 +896,16 @@ SELECT
   CONCAT('0987', LPAD(n, 6, '0')), 
   CONCAT('Tạm trú tại Cầu Giấy, Hà Nội'),
   CONCAT('102', LPAD(n, 7, '0')), 'Vietcombank', 'Thăng Long',
-  ELT(MOD(n, 5) + 1, 'Nguyễn Hữu Tài', 'Lê Kim Dung', 'Trần Văn Cường', 'Đặng Thị Yến', 'Phạm Hải Đăng'), 
+  ELT((n % 5) + 1, 'Nguyễn Hữu Tài', 'Lê Kim Dung', 'Trần Văn Cường', 'Đặng Thị Yến', 'Phạm Hải Đăng'), 
   CONCAT('0912', LPAD(n, 6, '0')), 
-  ELT(MOD(n, 3) + 1, 'Bố', 'Mẹ', 'Anh/Chị'),
-  165 + MOD(n, 20), 55 + MOD(n, 15), 'O', 'Tốt', CONCAT('791', LPAD(n, 7, '0'))
+  ELT((n % 3) + 1, 'Bố', 'Mẹ', 'Anh/Chị'),
+  165 + (n % 20), 55 + (n % 15), 'O', 'Tốt', CONCAT('791', LPAD(n, 7, '0'))
 FROM (
-  SELECT d.n + (t.n * 10) AS n
-  FROM (
-    SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
-    UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
-  ) d
-  CROSS JOIN (
-    SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
-  ) t
-) seq
-WHERE seq.n BETWEEN 1 AND 50;
+  SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+  UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+  UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+  UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18
+) seq;
 
 -- Set Manager for departments
 UPDATE `department` d
@@ -771,32 +919,39 @@ SET d.manager_employee_id = e.employee_id;
 
 INSERT INTO `contract` (
   `contract_id`,`contract_code`,`template_id`,`company_representative_id`,`company_signer_title`,`employee_id`,`effective_date`,`term_months`,
-  `base_salary`,`insurance_salary`,`salary_ratio`,`summary`,`attachment_link`,`is_signed`,`signed_at`
+  `base_salary`,`insurance_salary`,`salary_ratio`,`summary`,`attachment_link`,`is_signed`,`signed_at`,`contract_status`,`shift_id`,`end_date`
 )
 SELECT
   UUID(),
   CONCAT('CT-', e.employee_code),
   CASE
-    WHEN RIGHT(e.employee_code,2) IN ('01','02','03','04','05','06','07','08','09','10') THEN (SELECT template_id FROM contract_template WHERE template_code='TPL_PROBATION')
-    WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN (SELECT template_id FROM contract_template WHERE template_code='TPL_FIXED')
-    ELSE (SELECT template_id FROM contract_template WHERE template_code='TPL_OPEN')
+    WHEN CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) <= 5 THEN (SELECT template_id FROM contract_template WHERE template_code='TPL_OPEN')
+    WHEN CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) <= 13 THEN (SELECT template_id FROM contract_template WHERE template_code='TPL_FIXED')
+    ELSE (SELECT template_id FROM contract_template WHERE template_code='TPL_PROBATION')
   END,
   (SELECT employee_id FROM employee WHERE employee_code='EMP0001'),
-  'Giám đốc nhân sự',
+  'Tổng Giám đốc',
   e.employee_id,
   e.join_date,
   CASE
-    WHEN RIGHT(e.employee_code,2) IN ('01','02','03','04','05','06','07','08','09','10') THEN 2
-    WHEN MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),2)=0 THEN 24
-    ELSE NULL
+    WHEN CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) <= 5 THEN NULL
+    WHEN CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) <= 13 THEN 36
+    ELSE 2
   END,
-  9000000 + CAST(RIGHT(e.employee_code,2) AS UNSIGNED) * 120000,
-  6500000 + CAST(RIGHT(e.employee_code,2) AS UNSIGNED) * 80000,
+  15000000 + (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) * 1500000),
+  (15000000 + (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) * 1500000)) * 0.8,
   100.00,
   CONCAT('Hợp đồng lao động cho ', e.full_name),
   CONCAT('https://files.misa.local/contracts/', e.employee_code, '.pdf'),
   1,
-  NOW()
+  NOW(),
+  'active',
+  e.shift_id,
+  CASE
+    WHEN CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) <= 5 THEN NULL
+    WHEN CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) <= 13 THEN DATE_ADD(e.join_date, INTERVAL 36 MONTH)
+    ELSE DATE_ADD(e.join_date, INTERVAL 2 MONTH)
+  END
 FROM employee e;
 
 UPDATE employee e
@@ -814,26 +969,114 @@ FROM contract c;
 INSERT INTO `salary_period` (`salary_period_id`,`start_date`,`end_date`,`status`) VALUES
 (UUID(),'2026-01-01','2026-01-31','paid'),
 (UUID(),'2026-02-01','2026-02-28','paid'),
-(UUID(),'2026-03-01','2026-03-31','locked');
+(UUID(),'2026-03-01','2026-03-31','draft');
 
 INSERT INTO `attendance` (
-  `attendance_id`,`attendance_code`,`employee_id`,`shift_id`,`attendance_date`,`working_hours`,`overtime_hours`,`penalty_amount`,`bonus_amount`,`net_income`
+  `attendance_id`,`attendance_code`,`employee_id`,`shift_id`,`attendance_date`,`check_in`,`check_out`,`late_minutes`,`early_leave_minutes`,`working_hours`,`overtime_hours`,`status`,`penalty_amount`,`bonus_amount`,`net_income`
 )
 SELECT
   UUID(),
-  CONCAT('AT', REPLACE(DATE_FORMAT(DATE_ADD('2026-03-01', INTERVAL (d-1) DAY),'%Y-%m-%d'),'-',''), RIGHT(e.employee_code,4)),
-  e.employee_id,
-  e.shift_id,
-  DATE_ADD('2026-03-01', INTERVAL (d-1) DAY),
-  8.00,
-  CASE WHEN d = 4 AND MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),3)=0 THEN 2.00 ELSE 0.00 END,
-  CASE WHEN d = 2 AND MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),5)=0 THEN 100000 ELSE 0 END,
-  CASE WHEN d = 4 AND MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED),7)=0 THEN 150000 ELSE 0 END,
+  CONCAT('AT', DATE_FORMAT(src.attendance_date, '%Y%m%d'), RIGHT(src.employee_code, 4)),
+  src.employee_id,
+  src.shift_id,
+  src.attendance_date,
+  CASE
+    WHEN src.is_absent = 1 OR src.is_leave = 1 THEN NULL
+    WHEN src.shift_code = 'SHIFT_AM' AND src.is_late = 1 THEN '08:18:00'
+    WHEN src.shift_code = 'SHIFT_AM' THEN '08:03:00'
+    WHEN src.shift_code = 'SHIFT_PM' AND src.is_late = 1 THEN '13:14:00'
+    WHEN src.shift_code = 'SHIFT_PM' THEN '12:58:00'
+    WHEN src.shift_code = 'SHIFT_HC' AND src.is_late = 1 THEN '08:42:00'
+    ELSE '08:28:00'
+  END,
+  CASE
+    WHEN src.is_absent = 1 OR src.is_leave = 1 THEN NULL
+    WHEN src.shift_code = 'SHIFT_AM' AND src.is_early_leave = 1 THEN '16:40:00'
+    WHEN src.shift_code = 'SHIFT_AM' AND src.has_overtime = 1 THEN '18:05:00'
+    WHEN src.shift_code = 'SHIFT_AM' THEN '17:05:00'
+    WHEN src.shift_code = 'SHIFT_PM' AND src.is_early_leave = 1 THEN '21:10:00'
+    WHEN src.shift_code = 'SHIFT_PM' AND src.has_overtime = 1 THEN '22:25:00'
+    WHEN src.shift_code = 'SHIFT_PM' THEN '22:00:00'
+    WHEN src.shift_code = 'SHIFT_HC' AND src.is_early_leave = 1 THEN '16:45:00'
+    WHEN src.shift_code = 'SHIFT_HC' AND src.has_overtime = 1 THEN '18:10:00'
+    ELSE '17:35:00'
+  END,
+  CASE
+    WHEN src.is_absent = 1 OR src.is_leave = 1 THEN 0
+    WHEN src.is_late = 1 AND src.shift_code = 'SHIFT_AM' THEN 15
+    WHEN src.is_late = 1 AND src.shift_code = 'SHIFT_PM' THEN 12
+    WHEN src.is_late = 1 THEN 10
+    ELSE 0
+  END,
+  CASE
+    WHEN src.is_absent = 1 OR src.is_leave = 1 THEN 0
+    WHEN src.is_early_leave = 1 AND src.shift_code = 'SHIFT_AM' THEN 20
+    WHEN src.is_early_leave = 1 AND src.shift_code = 'SHIFT_PM' THEN 30
+    WHEN src.is_early_leave = 1 THEN 15
+    ELSE 0
+  END,
+  CASE
+    WHEN src.is_absent = 1 OR src.is_leave = 1 THEN 0
+    WHEN src.is_late = 1 AND src.is_early_leave = 1 THEN src.working_hours - 1.00
+    WHEN src.is_late = 1 OR src.is_early_leave = 1 THEN src.working_hours - 0.50
+    ELSE src.working_hours
+  END,
+  CASE
+    WHEN src.is_absent = 1 OR src.is_leave = 1 THEN 0
+    WHEN src.has_overtime = 1 AND src.shift_code = 'SHIFT_PM' THEN 1.50
+    WHEN src.has_overtime = 1 THEN 2.00
+    ELSE 0
+  END,
+  CASE
+    WHEN src.is_absent = 1 THEN 'absent'
+    WHEN src.is_leave = 1 THEN 'on_leave'
+    WHEN src.is_late = 1 THEN 'late'
+    ELSE 'present'
+  END,
+  CASE
+    WHEN src.is_absent = 1 THEN 150000
+    WHEN src.is_late = 1 AND src.is_early_leave = 1 THEN 100000
+    WHEN src.is_late = 1 OR src.is_early_leave = 1 THEN 50000
+    ELSE 0
+  END,
+  CASE
+    WHEN src.has_overtime = 1 THEN 120000
+    ELSE 0
+  END,
   0
-FROM employee e
-CROSS JOIN (
-  SELECT 1 AS d UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
-) day_seq;
+FROM (
+  SELECT
+    e.employee_id,
+    e.employee_code,
+    e.shift_id,
+    s.shift_code,
+    s.working_hours,
+    day_seq.d,
+    day_seq.attendance_date,
+    CASE WHEN (day_seq.d % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN 1 ELSE 0 END AS is_absent,
+    CASE WHEN (day_seq.d % 17 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 5 = 0) THEN 1 ELSE 0 END AS is_leave,
+    CASE WHEN (day_seq.d % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0) THEN 1 ELSE 0 END AS is_late,
+    CASE WHEN (day_seq.d % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0) THEN 1 ELSE 0 END AS is_early_leave,
+    CASE WHEN (day_seq.d % 5 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 1) THEN 1 ELSE 0 END AS has_overtime
+  FROM employee e
+  INNER JOIN shift s ON e.shift_id = s.shift_id
+  CROSS JOIN (
+    SELECT
+      d,
+      DATE_ADD('2026-03-01', INTERVAL (d - 1) DAY) AS attendance_date,
+      WEEKDAY(DATE_ADD('2026-03-01', INTERVAL (d - 1) DAY)) AS weekday_no
+    FROM (
+      SELECT 1 AS d UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+      UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+      UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+      UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19 UNION ALL SELECT 20
+      UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL SELECT 24 UNION ALL SELECT 25
+      UNION ALL SELECT 26 UNION ALL SELECT 27 UNION ALL SELECT 28 UNION ALL SELECT 29 UNION ALL SELECT 30
+      UNION ALL SELECT 31
+    ) numbers
+  ) day_seq
+  WHERE day_seq.weekday_no < 5
+) src;
 
 INSERT INTO `evaluation` (`evaluation_id`,`evaluation_code`,`employee_id`,`evaluation_type`,`reason`,`amount`,`evaluation_date`)
 SELECT
@@ -847,6 +1090,65 @@ SELECT
 FROM employee e
 WHERE MOD(CAST(RIGHT(e.employee_code,2) AS UNSIGNED), 4) = 0;
 
+UPDATE contract 
+SET contract_status = CASE 
+  WHEN end_date IS NOT NULL AND end_date < '2026-03-01' THEN 'expired'
+  ELSE 'active' 
+END 
+WHERE is_signed = 1;
+
+-- =========================================================
+-- SEED DATA: Chính sách lương (salary_policy)
+-- =========================================================
+INSERT INTO `salary_policy` 
+(`policy_code`, `policy_name`, `standard_workdays`, `overtime_multiplier_weekday`, `overtime_multiplier_weekend`, `overtime_multiplier_holiday`, `effective_from`, `effective_to`, `is_active`, `description`) 
+VALUES
+('SAL_POL_2026', 'Chính sách lương 2026', 22.00, 1.50, 2.00, 3.00, '2026-01-01', NULL, 1, 'Chính sách lương năm 2026 áp dụng cho tất cả nhân viên'),
+('SAL_POL_2025', 'Chính sách lương 2025', 22.00, 1.50, 2.00, 3.00, '2025-01-01', '2025-12-31', 0, 'Chính sách lương năm 2025 (hết hiệu lực)'),
+('SAL_POL_2024', 'Chính sách lương 2024', 22.00, 1.40, 2.00, 3.00, '2024-01-01', '2024-12-31', 0, 'Chính sách lương năm 2024 (hết hiệu lực)');
+
+-- =========================================================
+-- SEED DATA: Bậc thuế TNCN (tax_bracket) - Tiêu chuẩn Việt Nam 2024
+-- =========================================================
+INSERT INTO `tax_bracket` 
+(`bracket_code`, `bracket_name`, `lower_bound`, `upper_bound`, `tax_rate`, `quick_deduction`, `effective_from`, `effective_to`, `is_active`, `description`) 
+VALUES
+('TAX_BRACKET_1', 'Bậc 1: Từ 0 đến 5 triệu', 0.00, 5000000.00, 5.00, 0.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN thấp nhất'),
+('TAX_BRACKET_2', 'Bậc 2: Từ 5-10 triệu', 5000000.00, 10000000.00, 10.00, 250000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 2'),
+('TAX_BRACKET_3', 'Bậc 3: Từ 10-18 triệu', 10000000.00, 18000000.00, 15.00, 750000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 3'),
+('TAX_BRACKET_4', 'Bậc 4: Từ 18-32 triệu', 18000000.00, 32000000.00, 20.00, 1950000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 4'),
+('TAX_BRACKET_5', 'Bậc 5: Trên 32 triệu', 32000000.00, NULL, 35.00, 5250000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN cao nhất');
+
+-- =========================================================
+-- SEED DATA: Chính sách giảm trừ (deduction_policy)
+-- =========================================================
+INSERT INTO `deduction_policy` 
+(`policy_code`, `policy_name`, `social_insurance_rate`, `health_insurance_rate`, `unemployment_insurance_rate`, `personal_deduction_amount`, `dependent_deduction_amount`, `effective_from`, `effective_to`, `is_active`, `description`) 
+VALUES
+('DED_POL_2026', 'Chính sách giảm trừ 2026', 8.00, 1.50, 1.00, 11000000.00, 4400000.00, '2026-01-01', NULL, 1, 'Chính sách giảm trừ BHXH, BHYT, BHTN theo tiêu chuẩn năm 2026');
+
+-- =========================================================
+-- SEED DATA: Hồ sơ thuế nhân viên (employee_tax_profile)
+-- Liên kết tất cả nhân viên với chính sách thuế
+-- =========================================================
+INSERT INTO `employee_tax_profile` 
+(`employee_id`, `tax_code`, `dependent_count`, `is_resident`, `effective_from`, `effective_to`, `is_active`) 
+SELECT 
+  e.employee_id,
+  CONCAT('MST_', LPAD(ROW_NUMBER() OVER (ORDER BY e.employee_code), 5, '0')),
+  CASE 
+    WHEN MOD(CAST(RIGHT(e.employee_code, 2) AS UNSIGNED), 5) = 0 THEN 3
+    WHEN MOD(CAST(RIGHT(e.employee_code, 2) AS UNSIGNED), 5) = 1 THEN 2
+    WHEN MOD(CAST(RIGHT(e.employee_code, 2) AS UNSIGNED), 5) = 2 THEN 1
+    WHEN MOD(CAST(RIGHT(e.employee_code, 2) AS UNSIGNED), 5) = 3 THEN 0
+    ELSE 2
+  END,
+  1,
+  '2026-01-01',
+  NULL,
+  1
+FROM employee e
+ORDER BY e.employee_code;
 
 -- =========================================================
 -- VIEWS
@@ -872,6 +1174,33 @@ SELECT
   e.`contract_id`,
   e.`national_id`,
   e.`avatar_url`,
+  e.`place_of_birth`,
+  e.`hometown`,
+  e.`ethnic`,
+  e.`religion`,
+  e.`nationality`,
+  e.`marital_status`,
+  e.`personal_email`,
+  e.`facebook_url`,
+  e.`zalo_number`,
+  e.`temporary_address`,
+  e.`bank_account_number`,
+  e.`bank_name`,
+  e.`bank_branch`,
+  e.`emergency_contact_name`,
+  e.`emergency_contact_phone`,
+  e.`emergency_contact_relationship`,
+  e.`height`,
+  e.`weight`,
+  e.`blood_group`,
+  e.`health_status`,
+  e.`social_insurance_number`,
+  e.`department_id`,
+  e.`shift_id`,
+  e.`degree_id`,
+  e.`position_id`,
+  e.`account_id`,
+  e.`is_deleted`,
   d.`department_name`,
   s.`shift_name`,
   g.`degree_name`,
@@ -881,10 +1210,12 @@ SELECT
   e.`updated_at`
 FROM `employee` e
 LEFT JOIN `department` d ON e.`department_id` = d.`department_id`
-LEFT JOIN `shift` s ON e.`shift_id` = s.`shift_id`
 LEFT JOIN `degree` g ON e.`degree_id` = g.`degree_id`
 LEFT JOIN `position` p ON e.`position_id` = p.`position_id`
-LEFT JOIN `account` a ON e.`account_id` = a.`account_id`;
+LEFT JOIN `account` a ON e.`account_id` = a.`account_id`
+LEFT JOIN `contract` c ON e.`contract_id` = c.`contract_id`
+LEFT JOIN `shift` s ON COALESCE(c.`shift_id`, e.`shift_id`) = s.`shift_id`
+WHERE e.`is_deleted` = '00000000-0000-0000-0000-000000000000';
 
 
 
@@ -916,6 +1247,8 @@ SELECT
   c.`attachment_link`,
   c.`is_signed`,
   c.`signed_at`,
+  c.`shift_id`,
+  s.`shift_name`,
   c.`contract_status`,
   c.`end_date`,
   c.`terminated_at`,
@@ -925,8 +1258,9 @@ SELECT
   c.`updated_at`
 FROM `contract` c
 LEFT JOIN `contract_template` t ON c.`template_id` = t.`template_id`
-LEFT JOIN `employee` e ON c.`employee_id` = e.`employee_id`
-LEFT JOIN `employee` rep ON c.`company_representative_id` = rep.`employee_id`;
+JOIN `employee` e ON c.`employee_id` = e.`employee_id`
+JOIN `employee` rep ON c.`company_representative_id` = rep.`employee_id`
+LEFT JOIN `shift` s ON c.`shift_id` = s.`shift_id`;
 
 
 
@@ -981,5 +1315,145 @@ SELECT
 FROM `evaluation` ev
 LEFT JOIN `employee` e ON ev.`employee_id` = e.`employee_id`;
 
+
+-- ==========================================================
+-- STORED PROCEDURE: Sinh dữ liệu chấm công giả cho toàn bộ nhân viên trong tháng
+-- Cách dùng: CALL sp_generate_mock_attendance(3, 2026); -- Sinh dữ liệu tháng 3 năm 2026
+-- ==========================================================
+DELIMITER //
+
+CREATE PROCEDURE `sp_generate_mock_attendance`(IN p_month INT, IN p_year INT)
+BEGIN
+    DECLARE v_current_date DATE;
+    DECLARE v_end_date DATE;
+    
+    -- Xóa dữ liệu cũ của tháng (để đảm bảo tính idempotent, có thể chạy lại nhiều lần)
+    DELETE FROM attendance 
+    WHERE MONTH(attendance_date) = p_month AND YEAR(attendance_date) = p_year;
+
+    -- Lấy ngày đầu và ngày cuối tháng
+    SET v_current_date = STR_TO_DATE(CONCAT(p_year, '-', LPAD(p_month, 2, '0'), '-01'), '%Y-%m-%d');
+    SET v_end_date = LAST_DAY(v_current_date);
+
+    -- Vòng lặp từng ngày trong tháng
+    WHILE v_current_date <= v_end_date DO
+        -- Bỏ qua thứ 7 (DAYOFWEEK = 7) và Chủ nhật (DAYOFWEEK = 1)
+        IF DAYOFWEEK(v_current_date) NOT IN (1, 7) THEN
+            
+            INSERT INTO `attendance` (
+                `attendance_id`, `attendance_code`, `employee_id`, `shift_id`, 
+                `attendance_date`, `check_in`, `check_out`, `late_minutes`, 
+                `early_leave_minutes`, `working_hours`, `overtime_hours`, `status`, 
+                `penalty_amount`, `bonus_amount`, `net_income`
+            )
+            SELECT
+                UUID(),
+                CONCAT('AT', DATE_FORMAT(v_current_date, '%Y%m%d'), RIGHT(e.employee_code, 4)),
+                e.employee_id,
+                COALESCE(c.shift_id, e.shift_id), -- Ưu tiên ca của hợp đồng đang hiệu lực
+                v_current_date,
+                
+                -- Tạo check_in ngẫu nhiên (vắng, nghỉ phép, đi muộn, đúng giờ)
+                CASE 
+                    WHEN (DAY(v_current_date) % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN NULL -- Vắng
+                    WHEN (DAY(v_current_date) % 17 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 5 = 0) THEN NULL -- Nghỉ phép
+                    WHEN (DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0) AND s.shift_code = 'SHIFT_AM' THEN '08:18:00'
+                    WHEN (DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0) AND s.shift_code = 'SHIFT_PM' THEN '13:14:00'
+                    WHEN (DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0) AND s.shift_code = 'SHIFT_HC' THEN '08:42:00'
+                    WHEN s.shift_code = 'SHIFT_AM' THEN '08:03:00'
+                    WHEN s.shift_code = 'SHIFT_PM' THEN '12:58:00'
+                    ELSE '08:28:00'
+                END,
+                
+                -- Tạo check_out ngẫu nhiên (vắng, nghỉ phép, về sớm, tăng ca, đúng giờ)
+                CASE
+                    WHEN (DAY(v_current_date) % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN NULL
+                    WHEN (DAY(v_current_date) % 17 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 5 = 0) THEN NULL
+                    WHEN (DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0) AND s.shift_code = 'SHIFT_AM' THEN '16:40:00'
+                    WHEN (DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0) AND s.shift_code = 'SHIFT_PM' THEN '21:10:00'
+                    WHEN (DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0) AND s.shift_code = 'SHIFT_HC' THEN '16:45:00'
+                    WHEN (DAY(v_current_date) % 5 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 1) AND s.shift_code = 'SHIFT_AM' THEN '18:05:00'
+                    WHEN (DAY(v_current_date) % 5 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 1) AND s.shift_code = 'SHIFT_PM' THEN '22:25:00'
+                    WHEN (DAY(v_current_date) % 5 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 1) AND s.shift_code = 'SHIFT_HC' THEN '18:10:00'
+                    WHEN s.shift_code = 'SHIFT_AM' THEN '17:05:00'
+                    WHEN s.shift_code = 'SHIFT_PM' THEN '22:00:00'
+                    ELSE '17:35:00'
+                END,
+
+                -- late_minutes
+                CASE 
+                    WHEN (DAY(v_current_date) % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN 0
+                    WHEN (DAY(v_current_date) % 17 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 5 = 0) THEN 0
+                    WHEN (DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0) AND s.shift_code = 'SHIFT_AM' THEN 18
+                    WHEN (DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0) AND s.shift_code = 'SHIFT_PM' THEN 14
+                    WHEN (DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0) THEN 12
+                    ELSE 0
+                END,
+                
+                -- early_leave_minutes
+                CASE
+                    WHEN (DAY(v_current_date) % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN 0
+                    WHEN (DAY(v_current_date) % 17 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 5 = 0) THEN 0
+                    WHEN (DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0) AND s.shift_code = 'SHIFT_AM' THEN 20
+                    WHEN (DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0) AND s.shift_code = 'SHIFT_PM' THEN 50
+                    WHEN (DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0) THEN 45
+                    ELSE 0
+                END,
+                
+                -- working_hours
+                CASE
+                    WHEN (DAY(v_current_date) % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN 0
+                    WHEN (DAY(v_current_date) % 17 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 5 = 0) THEN 0
+                    WHEN ((DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0)) AND ((DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0)) THEN s.working_hours - 1.00
+                    WHEN ((DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0)) OR ((DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0)) THEN s.working_hours - 0.50
+                    ELSE s.working_hours
+                END,
+                
+                -- overtime_hours
+                CASE
+                    WHEN (DAY(v_current_date) % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN 0
+                    WHEN (DAY(v_current_date) % 17 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 5 = 0) THEN 0
+                    WHEN (DAY(v_current_date) % 5 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 1) AND s.shift_code = 'SHIFT_PM' THEN 1.50
+                    WHEN (DAY(v_current_date) % 5 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 1) THEN 2.00
+                    ELSE 0
+                END,
+                
+                -- status
+                CASE
+                    WHEN (DAY(v_current_date) % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN 'absent'
+                    WHEN (DAY(v_current_date) % 17 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 5 = 0) THEN 'on_leave'
+                    WHEN (DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0) THEN 'late'
+                    ELSE 'present'
+                END,
+                
+                -- penalty_amount
+                CASE
+                    WHEN (DAY(v_current_date) % 13 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 4 = 0) THEN 150000
+                    WHEN ((DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0)) AND ((DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0)) THEN 100000
+                    WHEN ((DAY(v_current_date) % 6 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 3 = 0)) OR ((DAY(v_current_date) % 9 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 0)) THEN 50000
+                    ELSE 0
+                END,
+                
+                -- bonus_amount
+                CASE
+                    WHEN (DAY(v_current_date) % 5 = 0) AND (CAST(RIGHT(e.employee_code, 2) AS UNSIGNED) % 2 = 1) THEN 120000
+                    ELSE 0
+                END,
+                
+                -- net_income
+                0
+            FROM employee e
+            LEFT JOIN contract c ON e.contract_id = c.contract_id
+            JOIN shift s ON COALESCE(c.shift_id, e.shift_id) = s.shift_id;
+            
+        END IF;
+
+        -- Tiến đến ngày tiếp theo
+        SET v_current_date = DATE_ADD(v_current_date, INTERVAL 1 DAY);
+    END WHILE;
+    
+END //
+
+DELIMITER ;
 
 COMMIT;

@@ -139,5 +139,15 @@ namespace MISA.QLSX.Core.Services
                 throw new ValidateException("Payroll status invalid", "Bảng lương đã khóa hoặc đã chi trả, không được phép chỉnh sửa khoản mục");
             }
         }
+
+        /// <summary>
+        /// Lấy danh sách các khoản mục lương theo định danh bảng lương.
+        /// </summary>
+        /// <param name="payrollId">Định danh bảng lương.</param>
+        /// <returns>Danh sách khoản mục lương thuộc bảng lương.</returns>
+        public async Task<List<PayrollItem>> GetByPayrollIdAsync(Guid payrollId)
+        {
+            return await _payrollItemRepository.GetByPayrollIdsAsync(new List<Guid> { payrollId });
+        }
     }
 }

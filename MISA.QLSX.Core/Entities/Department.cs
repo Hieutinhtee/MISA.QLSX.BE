@@ -42,6 +42,28 @@ namespace MISA.QLSX.Core.Entities
         public Guid? ManagerEmployeeId { get; set; }
 
         /// <summary>
+        /// Trạng thái sử dụng (1 - Đang sử dụng, 0 - Ngừng sử dụng).
+        /// </summary>
+        [Column("is_active")]
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// Ngày áp dụng ngừng sử dụng.
+        /// </summary>
+        [Column("inactive_effective_date")]
+        public DateTime? InactiveEffectiveDate { get; set; }
+
+        [Column("is_deleted")]
+        public Guid? IsDeleted { get; set; } = Guid.Empty;
+
+        // === NotMapped: dùng cho hiển thị FE ===
+
+        /// <summary>
+        /// Tên trưởng phòng (JOIN từ employee).
+        /// </summary>
+        [NotMapped]
+        public string? ManagerEmployeeName { get; set; }
+        /// <summary>
         /// Người tạo.
         /// </summary>
         [Column("created_by")]

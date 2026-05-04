@@ -3,6 +3,7 @@ using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Core.Interfaces.Repository;
 using MISA.QLSX.Infrastructure.Connection;
+using Dapper;
 
 namespace MISA.QLSX.Infrastructure.Repositories
 {
@@ -132,6 +133,54 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     DataType = typeof(string),
                     Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
+                ["placeOfBirth"] = new()
+                {
+                    Column = "place_of_birth",
+                    DataType = typeof(string),
+                    Operators = new() { "eq", "contains" },
+                },
+                ["hometown"] = new()
+                {
+                    Column = "hometown",
+                    DataType = typeof(string),
+                    Operators = new() { "eq", "contains" },
+                },
+                ["ethnic"] = new()
+                {
+                    Column = "ethnic",
+                    DataType = typeof(string),
+                    Operators = new() { "eq" },
+                },
+                ["religion"] = new()
+                {
+                    Column = "religion",
+                    DataType = typeof(string),
+                    Operators = new() { "eq" },
+                },
+                ["nationality"] = new()
+                {
+                    Column = "nationality",
+                    DataType = typeof(string),
+                    Operators = new() { "eq" },
+                },
+                ["maritalStatus"] = new()
+                {
+                    Column = "marital_status",
+                    DataType = typeof(string),
+                    Operators = new() { "eq" },
+                },
+                ["personalEmail"] = new()
+                {
+                    Column = "personal_email",
+                    DataType = typeof(string),
+                    Operators = new() { "eq", "contains" },
+                },
+                ["socialInsuranceNumber"] = new()
+                {
+                    Column = "social_insurance_number",
+                    DataType = typeof(string),
+                    Operators = new() { "eq", "contains" },
+                },
 
                 ["createdAt"] = new()
                 {
@@ -146,5 +195,24 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     Operators = new() { "eq", "lt", "lte", "gt", "gte" },
                 },
             };
+
+        /// <summary>
+        /// Lấy danh sách nhân viên theo mã vai trò.
+        /// </summary>
+        /// <param name="roleCode">Mã vai trò.</param>
+        /// <returns>Danh sách nhân viên.</returns>
+        public async Task<List<Employee>> GetEmployeesByRoleAsync(string roleCode)
+        {
+            using var conn = Connection;
+            var sql = $@"SELECT e.*, d.department_name AS DepartmentName, p.position_name AS PositionName
+                         FROM employee e
+                         INNER JOIN account a ON e.account_id = a.account_id
+                         INNER JOIN role r ON a.role_id = r.role_id
+                         LEFT JOIN department d ON e.department_id = d.department_id
+                         LEFT JOIN position p ON e.position_id = p.position_id
+                         WHERE r.role_code = @RoleCode AND e.is_deleted = '00000000-0000-0000-0000-000000000000'";
+            var result = await conn.QueryAsync<Employee>(sql, new { RoleCode = roleCode });
+            return result.ToList();
+        }
     }
 }
