@@ -29,9 +29,8 @@ namespace MISA.QLSX.Api.Authorization
         public void OnAuthorization(AuthorizationFilterContext context)
         {
             var roleCode = context.HttpContext.Session.GetString("role_code");
-            var employeeId = context.HttpContext.Session.GetString("employee_id");
 
-            if (string.IsNullOrWhiteSpace(roleCode) || string.IsNullOrWhiteSpace(employeeId))
+            if (string.IsNullOrWhiteSpace(roleCode))
             {
                 context.Result = new JsonResult(
                     new { message = "Bạn không có quyền thực hiện chức năng này" }
@@ -54,7 +53,50 @@ namespace MISA.QLSX.Api.Authorization
                 {
                     StatusCode = StatusCodes.Status403Forbidden,
                 };
+                return;
             }
+
+            if (normalizedRole == "EMPLOYEE" && IsReadOnlyEmployeeController(context))
+            {
+                return;
+            }
+
+            if (normalizedRole == "EMPLOYEE" && IsReadOnlyEmployeeController(context) == false)
+            {
+                context.Result = new JsonResult(new { message = "EMPLOYEE chỉ được xem dữ liệu của bản thân" })
+                {
+                    StatusCode = StatusCodes.Status403Forbidden,
+                };
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra action hiện tại có thuộc nhóm controller chỉ cho EMPLOYEE truy cập các action đọc hay không.
+        /// </summary>
+        /// <param name="context">Ngữ cảnh authorization hiện tại.</param>
+        /// <returns>True nếu action là read-only cho EMPLOYEE.</returns>
+        private static bool IsReadOnlyEmployeeController(AuthorizationFilterContext context)
+        {
+            var controller = context.ActionDescriptor.RouteValues.TryGetValue("controller", out var controllerName)
+                ? controllerName?.Trim().ToUpperInvariant()
+                : null;
+
+            var action = context.ActionDescriptor.RouteValues.TryGetValue("action", out var actionName)
+                ? actionName?.Trim().ToUpperInvariant()
+                : null;
+
+            if (string.IsNullOrWhiteSpace(controller) || string.IsNullOrWhiteSpace(action))
+            {
+                return true;
+            }
+
+            return controller switch
+            {
+                "EMPLOYEES" => action is "GETALL" or "GETBYID" or "GETPAGING",
+                "PAYROLLS" => action is "GETALL" or "GETBYID" or "GETPAGING",
+                "ATTENDANCES" => action is "GETALL" or "GETBYID" or "GETPAGING" or "GETEMPLOYEECALENDAR",
+                _ => true,
+            };
         }
     }
 }

@@ -26,5 +26,13 @@ namespace MISA.QLSX.Core.Interfaces.Service
         /// Lấy danh sách bước phê duyệt theo request ID.
         /// </summary>
         Task<List<ApprovalStep>> GetStepsAsync(Guid requestId);
+
+        /// <summary>
+        /// Hủy yêu cầu phê duyệt nếu vẫn còn ở trạng thái chờ duyệt.
+        /// </summary>
+        /// <param name="requestId">ID yêu cầu phê duyệt.</param>
+        /// <param name="actedBy">ID người thao tác.</param>
+        /// <returns>True nếu hủy thành công.</returns>
+        Task<bool> CancelRequestAsync(Guid requestId, Guid actedBy);
     }
 }

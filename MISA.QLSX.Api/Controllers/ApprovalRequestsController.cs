@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MISA.QLSX.Api.Authorization;
 using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Core.Interfaces.Service;
 
@@ -8,6 +9,7 @@ namespace MISA.QLSX.Api.Controllers
     /// Controller quản lý API phê duyệt.
     /// Kế thừa BaseController cho CRUD cơ bản + custom endpoints cho approve/reject.
     /// </summary>
+    [RequireRole("ADMIN", "HR", "MANAGER", "EMPLOYEE")]
     public class ApprovalRequestsController : BaseController<ApprovalRequest>
     {
         private readonly IApprovalRequestService _approvalService;
@@ -69,7 +71,7 @@ namespace MISA.QLSX.Api.Controllers
         /// </summary>
         private Guid GetCurrentUserId()
         {
-            var userIdStr = HttpContext.Session.GetString("UserId");
+            var userIdStr = HttpContext.Session.GetString("account_id");
             if (Guid.TryParse(userIdStr, out var userId))
                 return userId;
             return Guid.Empty;

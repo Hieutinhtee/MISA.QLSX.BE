@@ -145,6 +145,27 @@ namespace MISA.QLSX.Core.Services
             return await _approvalRepo.GetStepsByRequestIdAsync(requestId);
         }
 
+        /// <inheritdoc />
+        public async Task<bool> CancelRequestAsync(Guid requestId, Guid actedBy)
+        {
+            var request = await EnsureExistsAsync(requestId);
+            if (request == null)
+                throw new NotFoundException("Không tìm thấy yêu cầu", "Yêu cầu không tồn tại");
+
+            if (!string.Equals(request.Status, "pending", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidateException(
+                    "Yêu cầu đã được xử lý",
+                    "Chỉ có thể hủy yêu cầu đang chờ duyệt"
+                );
+            }
+
+            request.Status = "cancelled";
+            request.UpdatedBy = actedBy;
+            await _approvalRepo.UpdateAsync(requestId, request);
+            return true;
+        }
+
         /// <summary>
         /// Tạo danh sách bước phê duyệt theo loại yêu cầu.
         /// </summary>

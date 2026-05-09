@@ -3,6 +3,7 @@ using MISA.QLSX.Api.Authorization;
 using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.DTOs.Responses;
 using MISA.QLSX.Core.Entities;
+using MISA.QLSX.Core.Exceptions;
 using MISA.QLSX.Core.Interfaces.Service;
 
 namespace MISA.QLSX.Api.Controllers
@@ -51,6 +52,33 @@ namespace MISA.QLSX.Api.Controllers
             }
 
             return await _payrollService.QueryPagingAsync(request);
+        }
+
+        /// <summary>
+        /// Lấy chi tiết bảng lương theo ID với ràng buộc EMPLOYEE chỉ được xem bản thân.
+        /// </summary>
+        /// <param name="id">ID bảng lương cần xem.</param>
+        /// <returns>Chi tiết bảng lương theo quyền truy cập.</returns>
+        public override async Task<IActionResult> GetById(Guid id)
+        {
+            var role = HttpContext.Session.GetString("role_code")?.ToUpperInvariant();
+            var sessionEmployeeId = HttpContext.Session.GetString("employee_id");
+
+            if (role == "EMPLOYEE")
+            {
+                var payroll = await _payrollService.GetByIdAsync(id);
+                if (!payroll.EmployeeId.HasValue || !Guid.TryParse(sessionEmployeeId, out var parsedId) || payroll.EmployeeId.Value != parsedId)
+                {
+                    throw new ForbiddenException(
+                        "EMPLOYEE chỉ được xem dữ liệu bảng lương của bản thân",
+                        "Bạn không có quyền xem bảng lương của nhân viên khác"
+                    );
+                }
+
+                return Ok(new { data = payroll });
+            }
+
+            return await base.GetById(id);
         }
 
         /// <summary>

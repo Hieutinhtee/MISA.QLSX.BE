@@ -43,6 +43,7 @@ builder.Services.AddScoped<IEvaluationRepository, EvaluationRepository>();
 builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 builder.Services.AddScoped<IApprovalRequestRepository, ApprovalRequestRepository>();
+builder.Services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
 
 // Đăng ký Service
 builder.Services.AddScoped<IShiftService, ShiftService>();
@@ -65,6 +66,7 @@ builder.Services.AddScoped<IEvaluationService, EvaluationService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IApprovalRequestService, ApprovalRequestService>();
+builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 
 //Thêm Distributed Memory Cache và Session
 builder.Services.AddDistributedMemoryCache();

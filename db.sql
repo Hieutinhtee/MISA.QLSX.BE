@@ -419,6 +419,7 @@ CREATE TABLE `leave_request` (
   `return_date` DATE NOT NULL COMMENT 'Cột return_date: Ngày dự kiến đi làm lại',
   `reason` TEXT NOT NULL COMMENT 'Cột reason: Lý do xin nghỉ phép',
   `approval_status` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Cột approval_status: Trạng thái duyệt, 0 chờ duyệt, 1 duyệt, 2 từ chối',
+  `approval_request_id` CHAR(36) DEFAULT NULL COMMENT 'Cột approval_request_id: Khóa ngoại tham chiếu yêu cầu phê duyệt',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo đơn nghỉ phép',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu đơn nghỉ phép',
   `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật gần nhất của đơn nghỉ phép',
@@ -428,7 +429,9 @@ CREATE TABLE `leave_request` (
   KEY `idx_leave_request_employee_id` (`employee_id`),
   KEY `idx_leave_request_date_range` (`start_date`,`return_date`),
   KEY `idx_leave_request_approval_status` (`approval_status`),
+  KEY `idx_leave_request_approval_request_id` (`approval_request_id`),
   CONSTRAINT `fk_leave_request_employee` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`) ON UPDATE CASCADE ON DELETE CASCADE
+  ,CONSTRAINT `fk_leave_request_approval_request` FOREIGN KEY (`approval_request_id`) REFERENCES `approval_request` (`approval_request_id`) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng leave_request: Lưu thông tin đơn xin nghỉ phép và trạng thái duyệt';
 
 CREATE TABLE `salary_period` (

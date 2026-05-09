@@ -3,6 +3,7 @@ using MISA.QLSX.Core.Entities;
 using MISA.QLSX.Api.Authorization;
 using MISA.QLSX.Core.DTOs.Requests;
 using MISA.QLSX.Core.DTOs.Responses;
+using MISA.QLSX.Core.Exceptions;
 using MISA.QLSX.Core.Interfaces.Service;
 using System;
 using System.Collections.Generic;
@@ -50,6 +51,34 @@ namespace MISA.QLSX.Api.Controllers
             return await _attendanceService.QueryPagingAsync(request);
         }
 
+        /// <summary>
+        /// Lấy chi tiết chấm công theo ID với ràng buộc EMPLOYEE chỉ được xem bản thân.
+        /// </summary>
+        /// <param name="id">ID bản ghi chấm công cần xem.</param>
+        /// <returns>Chi tiết chấm công theo quyền truy cập.</returns>
+        public override async Task<IActionResult> GetById(Guid id)
+        {
+            var role = HttpContext.Session.GetString("role_code")?.ToUpperInvariant();
+
+            if (role == "EMPLOYEE")
+            {
+                var attendance = await _attendanceService.GetByIdAsync(id);
+                var sessionEmployeeId = HttpContext.Session.GetString("employee_id");
+
+                if (!attendance.EmployeeId.HasValue || !Guid.TryParse(sessionEmployeeId, out var parsedId) || attendance.EmployeeId.Value != parsedId)
+                {
+                    throw new ForbiddenException(
+                        "EMPLOYEE chỉ được xem dữ liệu chấm công của bản thân",
+                        "Bạn không có quyền xem chấm công của nhân viên khác"
+                    );
+                }
+
+                return Ok(new { data = attendance });
+            }
+
+            return await base.GetById(id);
+        }
+
         [HttpGet("dashboard")]
         [RequireRole("ADMIN", "HR", "MANAGER")]
         public async Task<IActionResult> GetDashboard([FromQuery] DateTime? date)
@@ -66,7 +95,10 @@ namespace MISA.QLSX.Api.Controllers
 
             if (role == "EMPLOYEE" && (!Guid.TryParse(sessionEmployeeId, out var parsedId) || parsedId != employeeId))
             {
-                return Forbid();
+                throw new ForbiddenException(
+                    "EMPLOYEE chỉ được xem lịch chấm công của bản thân",
+                    "Bạn không có quyền xem lịch chấm công của nhân viên khác"
+                );
             }
 
             var res = await _attendanceService.GetEmployeeCalendar(employeeId, month, year);
