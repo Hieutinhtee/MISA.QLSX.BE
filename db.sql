@@ -16,7 +16,13 @@ DROP TABLE IF EXISTS `payroll_snapshot`;
 DROP TABLE IF EXISTS `payroll_item`;
 DROP TABLE IF EXISTS `payroll`;
 DROP TABLE IF EXISTS `salary_period`;
+DROP TABLE IF EXISTS `department_member_history`;
+DROP TABLE IF EXISTS `department_manager_history`;
+DROP TABLE IF EXISTS `approval_step`;
+DROP TABLE IF EXISTS `file_reference`;
+DROP TABLE IF EXISTS `file_resource`;
 DROP TABLE IF EXISTS `leave_request`;
+DROP TABLE IF EXISTS `approval_request`;
 DROP TABLE IF EXISTS `suggestion`;
 DROP TABLE IF EXISTS `evaluation`;
 DROP TABLE IF EXISTS `business_trip`;
@@ -208,6 +214,38 @@ CREATE TABLE `role` (
   KEY `idx_role_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng role: Lưu danh mục vai trò phân quyền';
 
+CREATE TABLE `file_resource` (
+  `file_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột file_id: Khóa chính UUID của tệp',
+  `original_name` VARCHAR(255) NOT NULL COMMENT 'Cột original_name: Tên gốc của tệp khi người dùng tải lên',
+  `stored_name` VARCHAR(255) NOT NULL COMMENT 'Cột stored_name: Tên tệp lưu vật lý trên local storage',
+  `relative_path` VARCHAR(500) NOT NULL COMMENT 'Cột relative_path: Đường dẫn tương đối của tệp trong thư mục uploads',
+  `mime_type` VARCHAR(100) DEFAULT NULL COMMENT 'Cột mime_type: Kiểu nội dung MIME của tệp',
+  `size_bytes` BIGINT NOT NULL COMMENT 'Cột size_bytes: Kích thước tệp theo byte',
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 là chưa xóa, file_id là đã xóa',
+  `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tải tệp lên',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo metadata tệp',
+  `updated_by` CHAR(36) DEFAULT NULL COMMENT 'Cột updated_by: UUID người cập nhật metadata tệp gần nhất',
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật metadata tệp gần nhất',
+  PRIMARY KEY (`file_id`),
+  KEY `idx_file_resource_deleted` (`is_deleted`),
+  KEY `idx_file_resource_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng file_resource: Lưu metadata tệp dùng chung nhiều luồng nghiệp vụ';
+
+CREATE TABLE `file_reference` (
+  `file_reference_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột file_reference_id: Khóa chính UUID của liên kết tệp',
+  `file_id` CHAR(36) NOT NULL COMMENT 'Cột file_id: Khóa ngoại tham chiếu tệp metadata',
+  `module_name` VARCHAR(100) NOT NULL COMMENT 'Cột module_name: Mã module nghiệp vụ sử dụng tệp',
+  `entity_name` VARCHAR(100) NOT NULL COMMENT 'Cột entity_name: Tên thực thể nghiệp vụ',
+  `entity_id` CHAR(36) NOT NULL COMMENT 'Cột entity_id: ID bản ghi nghiệp vụ được gắn tệp',
+  `purpose` VARCHAR(100) DEFAULT NULL COMMENT 'Cột purpose: Mục đích sử dụng tệp trong luồng nghiệp vụ',
+  `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo liên kết tệp',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo liên kết tệp',
+  PRIMARY KEY (`file_reference_id`),
+  KEY `idx_file_reference_file_id` (`file_id`),
+  KEY `idx_file_reference_entity` (`module_name`,`entity_name`,`entity_id`),
+  CONSTRAINT `fk_file_reference_resource` FOREIGN KEY (`file_id`) REFERENCES `file_resource` (`file_id`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng file_reference: Liên kết tệp với các bản ghi nghiệp vụ dùng chung';
+
 CREATE TABLE `account` (
   `account_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột account_id: Khóa chính UUID của tài khoản',
   `account_code` VARCHAR(20) NOT NULL COMMENT 'Cột account_code: Mã tài khoản duy nhất để tra cứu',
@@ -236,6 +274,8 @@ CREATE TABLE `department` (
   `department_name` VARCHAR(100) NOT NULL COMMENT 'Cột department_name: Tên phòng ban',
   `description` TEXT DEFAULT NULL COMMENT 'Cột description: Ghi chú mô tả thêm cho phòng ban',
   `manager_employee_id` CHAR(36) DEFAULT NULL COMMENT 'Cột manager_employee_id: UUID nhân viên giữ vai trò trưởng phòng',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_active: Trạng thái sử dụng, 1 là đang sử dụng, 0 là ngừng',
+  `inactive_effective_date` DATE DEFAULT NULL COMMENT 'Cột inactive_effective_date: Ngày áp dụng ngừng sử dụng',
   `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' COMMENT 'Cột is_deleted: Đánh dấu xóa mềm, 0 chưa xóa, Id bản ghi là đã xóa',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo phòng ban',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo dữ liệu phòng ban',
@@ -245,6 +285,7 @@ CREATE TABLE `department` (
   UNIQUE KEY `uk_department_code` (`department_code`, `is_deleted`),
   UNIQUE KEY `uk_department_name` (`department_name`, `is_deleted`),
   KEY `idx_department_manager_employee_id` (`manager_employee_id`),
+  KEY `idx_department_active` (`is_active`),
   KEY `idx_department_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng department: Lưu danh mục phòng ban trong tổ chức';
 
@@ -411,6 +452,61 @@ CREATE TABLE `suggestion` (
   CONSTRAINT `fk_suggestion_employee` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng suggestion: Lưu thông tin kiến nghị và đề xuất của nhân viên';
 
+-- =============================================
+-- Bảng approval_request (yêu cầu phê duyệt)
+-- =============================================
+CREATE TABLE `approval_request` (
+  `approval_request_id` CHAR(36) NOT NULL DEFAULT (UUID()),
+  `request_code` VARCHAR(30) NOT NULL COMMENT 'Mã yêu cầu tự sinh',
+  `request_type` ENUM(
+    'department_member_transfer',
+    'department_manager_change',
+    'contract_change',
+    'leave_request'
+  ) NOT NULL COMMENT 'Loại yêu cầu phê duyệt',
+  `title` VARCHAR(255) NOT NULL COMMENT 'Tiêu đề yêu cầu',
+  `description` TEXT DEFAULT NULL COMMENT 'Mô tả chi tiết',
+  `payload` JSON NOT NULL COMMENT 'Dữ liệu thay đổi cần áp dụng khi duyệt',
+  `effective_date` DATE DEFAULT NULL COMMENT 'Ngày có hiệu lực của thay đổi',
+  `status` ENUM('pending','approved','rejected','cancelled') NOT NULL DEFAULT 'pending',
+  `current_step` INT NOT NULL DEFAULT 1,
+  `total_steps` INT NOT NULL DEFAULT 1,
+  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
+  `created_by` CHAR(36) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_by` CHAR(36) DEFAULT NULL,
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`approval_request_id`),
+  UNIQUE KEY `uk_request_code` (`request_code`),
+  KEY `idx_request_type` (`request_type`),
+  KEY `idx_request_status` (`status`),
+  KEY `idx_request_created_by` (`created_by`),
+  KEY `idx_request_deleted` (`is_deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng approval_request: Lưu yêu cầu phê duyệt chung cho mọi quy trình';
+
+-- =============================================
+-- Bảng approval_step (bước phê duyệt)
+-- =============================================
+CREATE TABLE `approval_step` (
+  `approval_step_id` CHAR(36) NOT NULL DEFAULT (UUID()),
+  `approval_request_id` CHAR(36) NOT NULL,
+  `step_order` INT NOT NULL COMMENT 'Thứ tự bước (1, 2, ...)',
+  `approver_role` VARCHAR(20) NOT NULL COMMENT 'Role cần duyệt: ADMIN, HR, MANAGER',
+  `approver_id` CHAR(36) DEFAULT NULL COMMENT 'Người duyệt cụ thể (null = bất kỳ ai có role)',
+  `status` ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `comment` TEXT DEFAULT NULL,
+  `acted_at` DATETIME DEFAULT NULL,
+  `acted_by` CHAR(36) DEFAULT NULL,
+  PRIMARY KEY (`approval_step_id`),
+  KEY `idx_step_request` (`approval_request_id`),
+  KEY `idx_step_role` (`approver_role`),
+  KEY `idx_step_status` (`status`),
+  CONSTRAINT `fk_step_request` FOREIGN KEY (`approval_request_id`)
+    REFERENCES `approval_request` (`approval_request_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Bảng approval_step: Lưu từng bước phê duyệt của yêu cầu';
+
 CREATE TABLE `leave_request` (
   `leave_request_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột leave_request_id: Khóa chính UUID của đơn nghỉ phép',
   `leave_request_code` VARCHAR(20) NOT NULL COMMENT 'Cột leave_request_code: Mã đơn nghỉ phép duy nhất để tra cứu',
@@ -430,8 +526,8 @@ CREATE TABLE `leave_request` (
   KEY `idx_leave_request_date_range` (`start_date`,`return_date`),
   KEY `idx_leave_request_approval_status` (`approval_status`),
   KEY `idx_leave_request_approval_request_id` (`approval_request_id`),
-  CONSTRAINT `fk_leave_request_employee` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`) ON UPDATE CASCADE ON DELETE CASCADE
-  ,CONSTRAINT `fk_leave_request_approval_request` FOREIGN KEY (`approval_request_id`) REFERENCES `approval_request` (`approval_request_id`) ON UPDATE CASCADE ON DELETE SET NULL
+  CONSTRAINT `fk_leave_request_employee` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`) ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT `fk_leave_request_approval_request` FOREIGN KEY (`approval_request_id`) REFERENCES `approval_request` (`approval_request_id`) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng leave_request: Lưu thông tin đơn xin nghỉ phép và trạng thái duyệt';
 
 CREATE TABLE `salary_period` (
@@ -653,84 +749,8 @@ CREATE TABLE `contract_history` (
   CONSTRAINT `fk_contract_history_contract` FOREIGN KEY (`contract_id`) REFERENCES `contract` (`contract_id`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng contract_history: Lưu lịch sử thay đổi chi tiết của hợp đồng';
 
--- Migration 003: Approval Workflow + Department Upgrade
--- Created: 2026-05-02
-
-USE `misa_qlsx`;
-SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
-
 -- =============================================
--- 1. Bảng approval_request (yêu cầu phê duyệt)
--- =============================================
-DROP TABLE IF EXISTS `approval_step`;
-DROP TABLE IF EXISTS `approval_request`;
-DROP TABLE IF EXISTS `department_member_history`;
-DROP TABLE IF EXISTS `department_manager_history`;
-
-CREATE TABLE `approval_request` (
-  `approval_request_id` CHAR(36) NOT NULL DEFAULT (UUID()),
-  `request_code` VARCHAR(30) NOT NULL COMMENT 'Mã yêu cầu tự sinh',
-  `request_type` ENUM(
-    'department_member_transfer',
-    'department_manager_change',
-    'contract_change',
-    'leave_request'
-  ) NOT NULL COMMENT 'Loại yêu cầu phê duyệt',
-  `title` VARCHAR(255) NOT NULL COMMENT 'Tiêu đề yêu cầu',
-  `description` TEXT DEFAULT NULL COMMENT 'Mô tả chi tiết',
-  `payload` JSON NOT NULL COMMENT 'Dữ liệu thay đổi cần áp dụng khi duyệt',
-  `effective_date` DATE DEFAULT NULL COMMENT 'Ngày có hiệu lực của thay đổi',
-  `status` ENUM('pending','approved','rejected','cancelled') NOT NULL DEFAULT 'pending',
-  `current_step` INT NOT NULL DEFAULT 1,
-  `total_steps` INT NOT NULL DEFAULT 1,
-  `is_deleted` CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',
-  `created_by` CHAR(36) NOT NULL,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_by` CHAR(36) DEFAULT NULL,
-  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`approval_request_id`),
-  UNIQUE KEY `uk_request_code` (`request_code`),
-  KEY `idx_request_type` (`request_type`),
-  KEY `idx_request_status` (`status`),
-  KEY `idx_request_created_by` (`created_by`),
-  KEY `idx_request_deleted` (`is_deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Bảng approval_request: Lưu yêu cầu phê duyệt chung cho mọi quy trình';
-
--- =============================================
--- 2. Bảng approval_step (bước phê duyệt)
--- =============================================
-CREATE TABLE `approval_step` (
-  `approval_step_id` CHAR(36) NOT NULL DEFAULT (UUID()),
-  `approval_request_id` CHAR(36) NOT NULL,
-  `step_order` INT NOT NULL COMMENT 'Thứ tự bước (1, 2, ...)',
-  `approver_role` VARCHAR(20) NOT NULL COMMENT 'Role cần duyệt: ADMIN, HR, MANAGER',
-  `approver_id` CHAR(36) DEFAULT NULL COMMENT 'Người duyệt cụ thể (null = bất kỳ ai có role)',
-  `status` ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
-  `comment` TEXT DEFAULT NULL,
-  `acted_at` DATETIME DEFAULT NULL,
-  `acted_by` CHAR(36) DEFAULT NULL,
-  PRIMARY KEY (`approval_step_id`),
-  KEY `idx_step_request` (`approval_request_id`),
-  KEY `idx_step_role` (`approver_role`),
-  KEY `idx_step_status` (`status`),
-  CONSTRAINT `fk_step_request` FOREIGN KEY (`approval_request_id`)
-    REFERENCES `approval_request` (`approval_request_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Bảng approval_step: Lưu từng bước phê duyệt của yêu cầu';
-
--- =============================================
--- 3. Alter department: thêm is_active + inactive_effective_date
--- =============================================
-ALTER TABLE `department`
-  ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1
-    COMMENT 'Trạng thái sử dụng: 1=đang sử dụng, 0=ngừng' AFTER `manager_employee_id`,
-  ADD COLUMN `inactive_effective_date` DATE DEFAULT NULL
-    COMMENT 'Ngày áp dụng ngừng sử dụng' AFTER `is_active`;
-
--- =============================================
--- 4. Bảng department_member_history
+-- Bảng department_member_history
 -- =============================================
 CREATE TABLE `department_member_history` (
   `history_id` CHAR(36) NOT NULL DEFAULT (UUID()),
@@ -754,7 +774,7 @@ CREATE TABLE `department_member_history` (
   COMMENT='Bảng department_member_history: Lịch sử thuyên chuyển thành viên phòng ban';
 
 -- =============================================
--- 5. Bảng department_manager_history
+-- Bảng department_manager_history
 -- =============================================
 CREATE TABLE `department_manager_history` (
   `history_id` CHAR(36) NOT NULL DEFAULT (UUID()),
@@ -775,10 +795,6 @@ CREATE TABLE `department_manager_history` (
     REFERENCES `employee` (`employee_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Bảng department_manager_history: Lịch sử bổ nhiệm trưởng phòng';
-
-SET FOREIGN_KEY_CHECKS = 1;
-
--- =========================================================
 
 -- =========================================================
 -- DỮ LIỆU MẪU
@@ -820,11 +836,30 @@ INSERT INTO `role` (`role_id`,`role_code`,`role_name`,`description`) VALUES
 ('3abcf2f6-43e7-11f1-8388-d0c5d346d1a4','MANAGER','Quản lý','Quản lý phòng ban'),
 ('4abcf2f6-43e7-11f1-8388-d0c5d346d1a4','EMPLOYEE','Nhân viên','Người dùng nhân viên');
 
-INSERT INTO `account` (`account_id`,`account_code`,`username`,`password_hash`,`role_id`,`is_active`) VALUES
-(UUID(),'ACC_ADMIN','admin','$2b$12$c5aggsyJ5ztAgCidkiawFO9CSNHfSULpZsC3goirv0lMS10QNWw6m',(SELECT role_id FROM role WHERE role_code='ADMIN'),1),
-(UUID(),'ACC_HR01','hr','$2b$12$tBFQXJhmYIMjGZ84D1SZH.vaOPbOFyeyXgnfDjcnJ46D4WMvvyg0G',(SELECT role_id FROM role WHERE role_code='HR'),1),
-(UUID(),'ACC_MGR01','manager','$2b$12$DcaI5cocW509bVHakUh9Q.pvZX7Z88aBkZNO/PR61lMu/5eOEC8vm',(SELECT role_id FROM role WHERE role_code='MANAGER'),1),
-(UUID(),'ACC_EMP01','nhanvien','$2b$12$4MLovO9KvVr9ig.MDhytyuG4EAWXyMjyaL9eX1pPhrZMdQ.Vg3sNa',(SELECT role_id FROM role WHERE role_code='EMPLOYEE'),1);
+INSERT INTO `account` (`account_id`,`account_code`,`username`,`password_hash`,`role_id`,`is_active`)
+SELECT
+  UUID(),
+  CONCAT('ACC_EMP', LPAD(n, 4, '0')),
+  CASE 
+    WHEN n = 1 THEN 'admin'
+    WHEN n = 2 THEN 'hr'
+    WHEN n = 3 THEN 'manager'
+    ELSE CONCAT('user', LPAD(n, 4, '0'))
+  END,
+  '$2b$12$c5aggsyJ5ztAgCidkiawFO9CSNHfSULpZsC3goirv0lMS10QNWw6m',
+  CASE 
+    WHEN n = 1 THEN (SELECT role_id FROM role WHERE role_code='ADMIN')
+    WHEN n = 2 THEN (SELECT role_id FROM role WHERE role_code='HR')
+    WHEN n IN (3, 4) THEN (SELECT role_id FROM role WHERE role_code='MANAGER')
+    ELSE (SELECT role_id FROM role WHERE role_code='EMPLOYEE')
+  END,
+  1
+FROM (
+  SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+  UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10
+  UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+  UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18
+) seq;
 
 INSERT INTO `department` (`department_id`,`department_code`,`department_name`,`description`) VALUES
 (UUID(),'DEP_HR','Phòng nhân sự','Quản lý nhân sự và hành chính'),
@@ -881,17 +916,11 @@ SELECT
   END,
   NULL,
   CASE
-    WHEN n = 1 THEN (SELECT position_id FROM position WHERE position_code='POS_MANAGER')
+    WHEN n IN (1, 2, 3, 4) THEN (SELECT position_id FROM position WHERE position_code='POS_MANAGER')
     WHEN n % 5 = 0 THEN (SELECT position_id FROM position WHERE position_code='POS_TEAM_LEAD')
     ELSE (SELECT position_id FROM position WHERE position_code='POS_STAFF')
   END,
-  CASE n
-    WHEN 1 THEN (SELECT account_id FROM account WHERE account_code='ACC_ADMIN')
-    WHEN 2 THEN (SELECT account_id FROM account WHERE account_code='ACC_HR01')
-    WHEN 3 THEN (SELECT account_id FROM account WHERE account_code='ACC_MGR01')
-    WHEN 4 THEN (SELECT account_id FROM account WHERE account_code='ACC_EMP01')
-    ELSE NULL
-  END,
+  (SELECT account_id FROM account WHERE account_code = CONCAT('ACC_EMP', LPAD(n, 4, '0'))),
   'profile.jpg',
   'Hà Nội', 'Thái Bình', 'Kinh', 'Không', 'Việt Nam', 'Độc thân', 
   CONCAT('nguyenvana', n, '@gmail.com'), 
@@ -1101,6 +1130,48 @@ END
 WHERE is_signed = 1;
 
 -- =========================================================
+-- SEED DATA: Đơn nghỉ phép (leave_request)
+-- =========================================================
+INSERT INTO `leave_request` (`leave_request_id`,`leave_request_code`,`employee_id`,`start_date`,`return_date`,`reason`,`approval_status`)
+SELECT UUID(), CONCAT('LR-', LPAD(ROW_NUMBER() OVER (ORDER BY e.employee_code), 5, '0')),
+  e.employee_id, '2026-03-10', '2026-03-12', 'Nghỉ phép cá nhân', 1
+FROM employee e WHERE e.employee_code IN ('EMP0003','EMP0007')
+UNION ALL
+SELECT UUID(), CONCAT('LR-', LPAD(ROW_NUMBER() OVER (ORDER BY e.employee_code) + 2, 5, '0')),
+  e.employee_id, '2026-03-20', '2026-03-21', 'Nghỉ ốm', 0
+FROM employee e WHERE e.employee_code IN ('EMP0010','EMP0014');
+
+-- =========================================================
+-- SEED DATA: Kiến nghị (suggestion)
+-- =========================================================
+INSERT INTO `suggestion` (`suggestion_id`,`suggestion_code`,`employee_id`,`title`,`content`)
+SELECT UUID(), CONCAT('SG-', LPAD(ROW_NUMBER() OVER (ORDER BY e.employee_code), 5, '0')),
+  e.employee_id,
+  ELT(ROW_NUMBER() OVER (ORDER BY e.employee_code),
+    'Đề xuất cải thiện quy trình chấm công',
+    'Kiến nghị tăng phúc lợi nhân viên',
+    'Đề xuất tổ chức team building'
+  ),
+  ELT(ROW_NUMBER() OVER (ORDER BY e.employee_code),
+    'Hiện tại quy trình chấm công thủ công, đề xuất áp dụng chấm công bằng vân tay để tăng chính xác.',
+    'Đề xuất bổ sung gói bảo hiểm sức khỏe nâng cao cho nhân viên lâu năm.',
+    'Đề xuất tổ chức hoạt động team building quý 2/2026 tại Đà Nẵng để gắn kết nhân viên.'
+  )
+FROM employee e WHERE e.employee_code IN ('EMP0002','EMP0005','EMP0009');
+
+-- =========================================================
+-- SEED DATA: Công tác (business_trip)
+-- =========================================================
+INSERT INTO `business_trip` (`business_trip_id`,`business_trip_code`,`employee_id`,`start_date`,`end_date`,`location`,`purpose`,`support_amount`)
+SELECT UUID(), CONCAT('BT-', LPAD(ROW_NUMBER() OVER (ORDER BY e.employee_code), 5, '0')),
+  e.employee_id,
+  '2026-03-15', '2026-03-18',
+  ELT(ROW_NUMBER() OVER (ORDER BY e.employee_code), 'TP. Hồ Chí Minh', 'Đà Nẵng'),
+  ELT(ROW_NUMBER() OVER (ORDER BY e.employee_code), 'Họp đối tác kinh doanh', 'Khảo sát thị trường miền Trung'),
+  ELT(ROW_NUMBER() OVER (ORDER BY e.employee_code), 3000000, 2500000)
+FROM employee e WHERE e.employee_code IN ('EMP0001','EMP0003');
+
+-- =========================================================
 -- SEED DATA: Chính sách lương (salary_policy)
 -- =========================================================
 INSERT INTO `salary_policy` 
@@ -1116,11 +1187,13 @@ VALUES
 INSERT INTO `tax_bracket` 
 (`bracket_code`, `bracket_name`, `lower_bound`, `upper_bound`, `tax_rate`, `quick_deduction`, `effective_from`, `effective_to`, `is_active`, `description`) 
 VALUES
-('TAX_BRACKET_1', 'Bậc 1: Từ 0 đến 5 triệu', 0.00, 5000000.00, 5.00, 0.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN thấp nhất'),
+('TAX_BRACKET_1', 'Bậc 1: Từ 0 đến 5 triệu', 0.00, 5000000.00, 5.00, 0.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 1'),
 ('TAX_BRACKET_2', 'Bậc 2: Từ 5-10 triệu', 5000000.00, 10000000.00, 10.00, 250000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 2'),
 ('TAX_BRACKET_3', 'Bậc 3: Từ 10-18 triệu', 10000000.00, 18000000.00, 15.00, 750000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 3'),
-('TAX_BRACKET_4', 'Bậc 4: Từ 18-32 triệu', 18000000.00, 32000000.00, 20.00, 1950000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 4'),
-('TAX_BRACKET_5', 'Bậc 5: Trên 32 triệu', 32000000.00, NULL, 35.00, 5250000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN cao nhất');
+('TAX_BRACKET_4', 'Bậc 4: Từ 18-32 triệu', 18000000.00, 32000000.00, 20.00, 1650000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 4'),
+('TAX_BRACKET_5', 'Bậc 5: Từ 32-52 triệu', 32000000.00, 52000000.00, 25.00, 3250000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 5'),
+('TAX_BRACKET_6', 'Bậc 6: Từ 52-80 triệu', 52000000.00, 80000000.00, 30.00, 5850000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 6'),
+('TAX_BRACKET_7', 'Bậc 7: Trên 80 triệu', 80000000.00, NULL, 35.00, 9850000.00, '2024-01-01', NULL, 1, 'Bậc thuế TNCN bậc 7 cao nhất');
 
 -- =========================================================
 -- SEED DATA: Chính sách giảm trừ (deduction_policy)
@@ -1209,6 +1282,7 @@ SELECT
   g.`degree_name`,
   p.`position_name`,
   a.`username` AS `account_name`,
+  c.`contract_code`,
   e.`created_at`,
   e.`updated_at`
 FROM `employee` e

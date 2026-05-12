@@ -15,10 +15,14 @@ namespace MISA.QLSX.Core.Services
     public class ApprovalRequestService : BaseServices<ApprovalRequest>, IApprovalRequestService
     {
         private readonly IApprovalRequestRepository _approvalRepo;
+        private readonly IEmployeeRepository _employeeRepo;
 
-        public ApprovalRequestService(IApprovalRequestRepository repo) : base(repo)
+        public ApprovalRequestService(
+            IApprovalRequestRepository repo,
+            IEmployeeRepository employeeRepo) : base(repo)
         {
             _approvalRepo = repo;
+            _employeeRepo = employeeRepo;
         }
 
         /// <inheritdoc />
@@ -42,6 +46,26 @@ namespace MISA.QLSX.Core.Services
             // Xác định số bước duyệt theo loại yêu cầu
             var steps = BuildSteps(request.RequestType);
             request.TotalSteps = steps.Count;
+
+            if (request.RequestType == "leave_request" && request.CreatedBy.HasValue)
+            {
+                var managerId = await _employeeRepo.GetDepartmentManagerIdAsync(request.CreatedBy.Value);
+                var managerStep = steps.FirstOrDefault(s => s.ApproverRole == "MANAGER");
+
+                if (managerStep != null)
+                {
+                    if (!managerId.HasValue || managerId.Value == request.CreatedBy.Value)
+                    {
+                        // Người tạo là trưởng phòng, hoặc phòng chưa có trưởng phòng -> Chuyển cho HR duyệt
+                        managerStep.ApproverRole = "HR";
+                    }
+                    else
+                    {
+                        // Gán đích danh ID trưởng phòng
+                        managerStep.ApproverId = managerId.Value;
+                    }
+                }
+            }
 
             // Tạo request
             var requestId = await base.CreateAsync(request);
@@ -78,6 +102,10 @@ namespace MISA.QLSX.Core.Services
 
             if (step.StepOrder != request.CurrentStep)
                 throw new ValidateException("Chưa đến lượt duyệt bước này", "Phải duyệt theo thứ tự");
+
+            // Kiểm tra quyền đích danh nếu có
+            if (step.ApproverId.HasValue && step.ApproverId.Value != actedBy)
+                throw new ValidateException("Bạn không có quyền duyệt bước này", "Chỉ người được chỉ định mới có thể duyệt");
 
             // Cập nhật step
             step.Status = "approved";
@@ -123,6 +151,10 @@ namespace MISA.QLSX.Core.Services
 
             if (step.Status != "pending")
                 throw new ValidateException("Bước đã được xử lý", "Không thể từ chối bước đã hoàn tất");
+
+            // Kiểm tra quyền đích danh nếu có
+            if (step.ApproverId.HasValue && step.ApproverId.Value != actedBy)
+                throw new ValidateException("Bạn không có quyền từ chối bước này", "Chỉ người được chỉ định mới có thể từ chối");
 
             // Cập nhật step
             step.Status = "rejected";
@@ -180,12 +212,11 @@ namespace MISA.QLSX.Core.Services
                         new() { StepOrder = 1, ApproverRole = "ADMIN", Status = "pending" }
                     },
 
-                // Employee tạo → MANAGER duyệt → HR duyệt
+                // Employee tạo → đích danh MANAGER duyệt (đã được gán ApproverId ở trên)
                 "leave_request" =>
                     new List<ApprovalStep>
                     {
-                        new() { StepOrder = 1, ApproverRole = "MANAGER", Status = "pending" },
-                        new() { StepOrder = 2, ApproverRole = "HR", Status = "pending" },
+                        new() { StepOrder = 1, ApproverRole = "MANAGER", Status = "pending" }
                     },
 
                 _ => throw new ValidateException($"Loại yêu cầu '{requestType}' không hợp lệ", "Loại yêu cầu không được hỗ trợ")

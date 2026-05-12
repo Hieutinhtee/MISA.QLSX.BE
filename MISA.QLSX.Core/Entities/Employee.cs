@@ -59,6 +59,9 @@ namespace MISA.QLSX.Core.Entities
         [Column("contract_id")]
         public Guid? ContractId { get; set; }
 
+        [NotMapped]
+        public string? ContractCode { get; set; }
+
         [Column("position_id")]
         public Guid? PositionId { get; set; }
 
@@ -73,6 +76,9 @@ namespace MISA.QLSX.Core.Entities
 
         [Column("avatar_url")]
         public string? AvatarUrl { get; set; }
+
+        [Column("cv_url")]
+        public string? CvUrl { get; set; }
 
         [Column("place_of_birth")]
         public string? PlaceOfBirth { get; set; }

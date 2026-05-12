@@ -20,6 +20,25 @@ Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddSingleton<MySqlConnectionFactory>(new MySqlConnectionFactory(connectionString));
 
+var fileStorageSection = builder.Configuration.GetSection("FileStorage");
+var uploadRoot = fileStorageSection["UploadRoot"];
+if (!string.IsNullOrWhiteSpace(uploadRoot))
+{
+    Environment.SetEnvironmentVariable("MISA_FILE_UPLOAD_ROOT", uploadRoot);
+}
+
+var maxFileSizeMb = fileStorageSection["MaxFileSizeMb"];
+if (!string.IsNullOrWhiteSpace(maxFileSizeMb))
+{
+    Environment.SetEnvironmentVariable("MISA_FILE_MAX_MB", maxFileSizeMb);
+}
+
+var allowedExtensions = fileStorageSection.GetSection("AllowedExtensions").Get<string[]>();
+if (allowedExtensions != null && allowedExtensions.Length > 0)
+{
+    Environment.SetEnvironmentVariable("MISA_FILE_ALLOWED_EXT", string.Join(",", allowedExtensions));
+}
+
 // Đăng ký Repository
 builder.Services.AddScoped<IShiftRepository, ShiftRepository>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
@@ -44,6 +63,7 @@ builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 builder.Services.AddScoped<IApprovalRequestRepository, ApprovalRequestRepository>();
 builder.Services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
+builder.Services.AddScoped<IFileRepository, FileRepository>();
 
 // Đăng ký Service
 builder.Services.AddScoped<IShiftService, ShiftService>();
@@ -67,6 +87,7 @@ builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IApprovalRequestService, ApprovalRequestService>();
 builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 //Thêm Distributed Memory Cache và Session
 builder.Services.AddDistributedMemoryCache();

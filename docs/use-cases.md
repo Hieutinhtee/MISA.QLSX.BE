@@ -20,15 +20,10 @@
 | 10 | Quản lý chấm công | Chấm công |
 | 11 | Quản lý công tác | Chấm công |
 | 12 | Quản lý đánh giá nhân viên | Nhân sự |
-| 13 | Quản lý kỳ lương | Tiền lương |
-| 14 | Quản lý chính sách lương | Tiền lương |
-| 15 | Quản lý chính sách khấu trừ | Tiền lương |
-| 16 | Quản lý khung thuế thu nhập cá nhân | Tiền lương |
-| 17 | Quản lý hồ sơ thuế nhân viên | Tiền lương |
-| 18 | Tính lương và quản lý bảng lương | Tiền lương |
-| 19 | Quản lý khoản mục lương | Tiền lương |
-| 20 | Quản lý yêu cầu phê duyệt | Phê duyệt |
-| 21 | Xem tổng quan hệ thống (Dashboard) | Báo cáo |
+| 13 | Quản lý hồ sơ thuế nhân viên | Tiền lương |
+| 14 | Quản lý khoản mục lương | Tiền lương |
+| 15 | Quản lý yêu cầu phê duyệt | Phê duyệt |
+| 16 | Xem tổng quan hệ thống (Dashboard) | Báo cáo |
 
 ---
 

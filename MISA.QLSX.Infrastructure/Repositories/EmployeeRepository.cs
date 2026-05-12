@@ -43,6 +43,7 @@ namespace MISA.QLSX.Infrastructure.Repositories
                     DataType = typeof(string),
                     Operators = new() { "eq", "notcontains", "contains", "starts", "ends", "neq" },
                 },
+
                 ["employeeId"] = new()
                 {
                     Column = "employee_id",
@@ -213,6 +214,23 @@ namespace MISA.QLSX.Infrastructure.Repositories
                          WHERE r.role_code = @RoleCode AND e.is_deleted = '00000000-0000-0000-0000-000000000000'";
             var result = await conn.QueryAsync<Employee>(sql, new { RoleCode = roleCode });
             return result.ToList();
+        }
+
+        /// <summary>
+        /// Lấy ID của trưởng phòng thuộc phòng ban của nhân viên.
+        /// </summary>
+        /// <param name="employeeId">ID nhân viên.</param>
+        /// <returns>ID của trưởng phòng, hoặc null nếu không có.</returns>
+        public async Task<Guid?> GetDepartmentManagerIdAsync(Guid employeeId)
+        {
+            using var conn = Connection;
+            var sql = @"SELECT d.manager_employee_id
+                        FROM employee e
+                        INNER JOIN department d ON e.department_id = d.department_id
+                        WHERE e.employee_id = @EmployeeId
+                        AND e.is_deleted = '00000000-0000-0000-0000-000000000000'
+                        AND d.is_deleted = '00000000-0000-0000-0000-000000000000'";
+            return await conn.QueryFirstOrDefaultAsync<Guid?>(sql, new { EmployeeId = employeeId });
         }
     }
 }
