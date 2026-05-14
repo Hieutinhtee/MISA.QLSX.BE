@@ -8,6 +8,7 @@ SET SQL_SAFE_UPDATES = 0;
 START TRANSACTION;
 
 DROP TABLE IF EXISTS `contract_history`;
+DROP TABLE IF EXISTS `dependent`;
 DROP TABLE IF EXISTS `employee_tax_profile`;
 DROP TABLE IF EXISTS `deduction_policy`;
 DROP TABLE IF EXISTS `tax_bracket`;
@@ -132,6 +133,7 @@ CREATE TABLE `contract_template` (
   `content` TEXT DEFAULT NULL COMMENT 'Cột content: Nội dung mẫu hợp đồng dạng HTML hoặc văn bản',
   `version` INT NOT NULL DEFAULT 1 COMMENT 'Cột version: Phiên bản của mẫu hợp đồng',
   `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Cột is_active: Trạng thái hoạt động của mẫu, 1 là hoạt động, 0 là ngừng',
+  `default_allowance_ids` JSON DEFAULT NULL COMMENT 'Lưu mảng ID các phụ cấp mặc định (dạng JSON array) để auto-fill khi tạo hợp đồng',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Cột created_at: Thời điểm tạo mẫu hợp đồng',
   `created_by` CHAR(36) DEFAULT NULL COMMENT 'Cột created_by: UUID người tạo mẫu hợp đồng',
   `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT 'Cột updated_at: Thời điểm cập nhật gần nhất của mẫu hợp đồng',
@@ -307,6 +309,7 @@ CREATE TABLE `employee` (
   `position_id` CHAR(36) DEFAULT NULL COMMENT 'Cột position_id: Khóa ngoại tham chiếu chức vụ',
   `account_id` CHAR(36) DEFAULT NULL COMMENT 'Cột account_id: Khóa ngoại tham chiếu tài khoản đăng nhập',
   `avatar_url` VARCHAR(255) NOT NULL DEFAULT 'profile.jpg' COMMENT 'Cột avatar_url: Đường dẫn hoặc tên tệp ảnh đại diện',
+  `cv_url` VARCHAR(255) DEFAULT NULL COMMENT 'Cột cv_url: ID tệp CV đính kèm',
   `place_of_birth` VARCHAR(255) DEFAULT NULL COMMENT 'Cột place_of_birth: Nơi sinh',
   `hometown` VARCHAR(255) DEFAULT NULL COMMENT 'Cột hometown: Quê quán',
   `ethnic` VARCHAR(50) DEFAULT 'Kinh' COMMENT 'Cột ethnic: Dân tộc',
@@ -733,6 +736,31 @@ CREATE TABLE `employee_tax_profile` (
   CONSTRAINT `chk_employee_tax_dependent` CHECK (`dependent_count` >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng employee_tax_profile: Lưu hồ sơ thuế và thông tin phụ thuộc của nhân viên';
 
+-- =============================================
+-- Bảng dependent (người phụ thuộc)
+-- =============================================
+CREATE TABLE `dependent` (
+  `dependent_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Khóa chính UUID',
+  `employee_id` CHAR(36) NOT NULL COMMENT 'Khóa ngoại tham chiếu nhân viên',
+  `full_name` VARCHAR(255) NOT NULL COMMENT 'Họ tên người phụ thuộc',
+  `date_of_birth` DATE NOT NULL COMMENT 'Ngày sinh',
+  `relationship` VARCHAR(50) NOT NULL COMMENT 'Mối quan hệ: Con, Bố, Mẹ, Vợ/Chồng...',
+  `tax_code` VARCHAR(20) DEFAULT NULL COMMENT 'Mã số thuế người phụ thuộc (nếu có)',
+  `identity_number` VARCHAR(20) DEFAULT NULL COMMENT 'Số CCCD/Giấy khai sinh',
+  `start_date` DATE NOT NULL COMMENT 'Ngày bắt đầu giảm trừ',
+  `end_date` DATE DEFAULT NULL COMMENT 'Ngày kết thúc giảm trừ (thường dùng cho con > 18 tuổi)',
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Trạng thái hoạt động',
+  `note` TEXT DEFAULT NULL COMMENT 'Ghi chú thêm',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_by` CHAR(36) DEFAULT NULL,
+  `updated_by` CHAR(36) DEFAULT NULL,
+  `updated_at` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`dependent_id`),
+  KEY `idx_dependent_employee_id` (`employee_id`),
+  CONSTRAINT `fk_dependent_employee` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng quản lý chi tiết người phụ thuộc của nhân viên';
+
+
 CREATE TABLE `contract_history` (
   `contract_history_id` CHAR(36) NOT NULL DEFAULT (UUID()) COMMENT 'Cột contract_history_id: Khóa chính UUID của bản ghi lịch sử',
   `contract_id` CHAR(36) NOT NULL COMMENT 'Cột contract_id: Khóa ngoại tham chiếu hợp đồng',
@@ -825,10 +853,10 @@ INSERT INTO `allowance` (`allowance_id`,`allowance_code`,`allowance_name`,`calcu
 (UUID(),'ALW_TRAVEL','Phụ cấp đi lại','FIXED',400000,NULL,1),
 (UUID(),'ALW_HOUSING','Phụ cấp nhà ở','FIXED',800000,NULL,1);
 
-INSERT INTO `contract_template` (`template_id`,`template_code`,`template_name`,`contract_type`,`content`,`version`,`is_active`) VALUES
-(UUID(),'TPL_PROBATION','Mẫu hợp đồng thử việc','Thử việc','Nội dung mẫu thử việc',1,1),
-(UUID(),'TPL_FIXED','Mẫu hợp đồng xác định thời hạn','Có thời hạn','Nội dung mẫu có thời hạn',1,1),
-(UUID(),'TPL_OPEN','Mẫu hợp đồng không xác định thời hạn','Không thời hạn','Nội dung mẫu không thời hạn',1,1);
+INSERT INTO `contract_template` (`template_id`,`template_code`,`template_name`,`contract_type`,`content`,`version`,`is_active`,`default_allowance_ids`) VALUES
+(UUID(),'TPL_PROBATION','Mẫu hợp đồng thử việc','Thử việc','Nội dung mẫu thử việc',1,1,NULL),
+(UUID(),'TPL_FIXED','Mẫu hợp đồng xác định thời hạn','Có thời hạn','Nội dung mẫu có thời hạn',1,1,NULL),
+(UUID(),'TPL_OPEN','Mẫu hợp đồng không xác định thời hạn','Không thời hạn','Nội dung mẫu không thời hạn',1,1,NULL);
 
 INSERT INTO `role` (`role_id`,`role_code`,`role_name`,`description`) VALUES
 ('0208f2f6-43e7-11f1-8388-d0c5d346d1a4','ADMIN','Quản trị viên','Toàn quyền hệ thống'),
@@ -869,7 +897,7 @@ INSERT INTO `department` (`department_id`,`department_code`,`department_name`,`d
 
 INSERT INTO `employee` (
   `employee_id`,`employee_code`,`full_name`,`gender`,`date_of_birth`,`address`,`phone_number`,`email`,`join_date`,
-  `department_id`,`shift_id`,`national_id`,`degree_id`,`contract_id`,`position_id`,`account_id`,`avatar_url`,
+  `department_id`,`shift_id`,`national_id`,`degree_id`,`contract_id`,`position_id`,`account_id`,`avatar_url`,`cv_url`,
   `place_of_birth`, `hometown`, `ethnic`, `religion`, `nationality`, `marital_status`, `personal_email`, 
   `facebook_url`, `zalo_number`, `temporary_address`, `bank_account_number`, `bank_name`, `bank_branch`, 
   `emergency_contact_name`, `emergency_contact_phone`, `emergency_contact_relationship`, `height`, `weight`, 
@@ -921,7 +949,7 @@ SELECT
     ELSE (SELECT position_id FROM position WHERE position_code='POS_STAFF')
   END,
   (SELECT account_id FROM account WHERE account_code = CONCAT('ACC_EMP', LPAD(n, 4, '0'))),
-  'profile.jpg',
+  'profile.jpg', NULL,
   'Hà Nội', 'Thái Bình', 'Kinh', 'Không', 'Việt Nam', 'Độc thân', 
   CONCAT('nguyenvana', n, '@gmail.com'), 
   CONCAT('https://fb.com/nguyenvana', n), 
@@ -1227,6 +1255,34 @@ FROM employee e
 ORDER BY e.employee_code;
 
 -- =========================================================
+-- SEED DATA: Người phụ thuộc (dependent)
+-- =========================================================
+INSERT INTO `dependent` (
+  `dependent_id`, `employee_id`, `full_name`, `date_of_birth`, `relationship`, `tax_code`, `identity_number`, `start_date`, `is_active`
+)
+SELECT 
+  UUID(),
+  e.employee_id,
+  CONCAT('Người phụ thuộc ', seq.n, ' của ', e.full_name),
+  DATE_SUB('2026-01-01', INTERVAL (seq.n * 5) YEAR),
+  CASE WHEN seq.n = 1 THEN 'Con' WHEN seq.n = 2 THEN 'Vợ/Chồng' ELSE 'Bố/Mẹ' END,
+  CONCAT('MSTDP_', e.employee_code, '_', seq.n),
+  CONCAT('ID_', e.employee_code, '_', seq.n),
+  '2026-01-01',
+  1
+FROM employee e
+JOIN (
+  SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3
+) seq ON seq.n <= CASE 
+    WHEN MOD(CAST(RIGHT(e.employee_code, 2) AS UNSIGNED), 5) = 0 THEN 3
+    WHEN MOD(CAST(RIGHT(e.employee_code, 2) AS UNSIGNED), 5) = 1 THEN 2
+    WHEN MOD(CAST(RIGHT(e.employee_code, 2) AS UNSIGNED), 5) = 2 THEN 1
+    WHEN MOD(CAST(RIGHT(e.employee_code, 2) AS UNSIGNED), 5) = 3 THEN 0
+    ELSE 2
+  END
+ORDER BY e.employee_code, seq.n;
+
+-- =========================================================
 -- VIEWS
 -- =========================================================
 
@@ -1250,6 +1306,7 @@ SELECT
   e.`contract_id`,
   e.`national_id`,
   e.`avatar_url`,
+  e.`cv_url`,
   e.`place_of_birth`,
   e.`hometown`,
   e.`ethnic`,
@@ -1394,10 +1451,27 @@ LEFT JOIN `employee` e ON ev.`employee_id` = e.`employee_id`;
 
 
 -- ==========================================================
+-- View chi tiết bảng lương kèm thông tin nhân viên
+-- Dùng cho màn hình danh sách chi tiết bảng lương
+-- ==========================================================
+DROP VIEW IF EXISTS `vw_payroll_detail`;
+
+CREATE OR REPLACE VIEW `vw_payroll_detail` AS
+SELECT
+  p.*,
+  e.`employee_code`,
+  e.`full_name`
+FROM `payroll` p
+LEFT JOIN `employee` e ON p.`employee_id` = e.`employee_id`;
+
+
+-- ==========================================================
 -- STORED PROCEDURE: Sinh dữ liệu chấm công giả cho toàn bộ nhân viên trong tháng
 -- Cách dùng: CALL sp_generate_mock_attendance(3, 2026); -- Sinh dữ liệu tháng 3 năm 2026
 -- ==========================================================
 DELIMITER //
+
+DROP PROCEDURE IF EXISTS `sp_generate_mock_attendance`//
 
 CREATE PROCEDURE `sp_generate_mock_attendance`(IN p_month INT, IN p_year INT)
 BEGIN
@@ -1529,6 +1603,40 @@ BEGIN
         SET v_current_date = DATE_ADD(v_current_date, INTERVAL 1 DAY);
     END WHILE;
     
+END //
+
+DELIMITER ;
+
+-- =============================================
+-- TRIGGERS: Tự động cập nhật dependent_count
+-- =============================================
+DELIMITER //
+
+CREATE TRIGGER `trg_after_dependent_insert`
+AFTER INSERT ON `dependent`
+FOR EACH ROW
+BEGIN
+    UPDATE `employee_tax_profile`
+    SET `dependent_count` = (SELECT COUNT(*) FROM `dependent` WHERE `employee_id` = NEW.`employee_id` AND `is_active` = 1)
+    WHERE `employee_id` = NEW.`employee_id`;
+END //
+
+CREATE TRIGGER `trg_after_dependent_update`
+AFTER UPDATE ON `dependent`
+FOR EACH ROW
+BEGIN
+    UPDATE `employee_tax_profile`
+    SET `dependent_count` = (SELECT COUNT(*) FROM `dependent` WHERE `employee_id` = NEW.`employee_id` AND `is_active` = 1)
+    WHERE `employee_id` = NEW.`employee_id`;
+END //
+
+CREATE TRIGGER `trg_after_dependent_delete`
+AFTER DELETE ON `dependent`
+FOR EACH ROW
+BEGIN
+    UPDATE `employee_tax_profile`
+    SET `dependent_count` = (SELECT COUNT(*) FROM `dependent` WHERE `employee_id` = OLD.`employee_id` AND `is_active` = 1)
+    WHERE `employee_id` = OLD.`employee_id`;
 END //
 
 DELIMITER ;

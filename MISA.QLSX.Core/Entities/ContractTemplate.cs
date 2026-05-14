@@ -29,6 +29,9 @@ namespace MISA.QLSX.Core.Entities
         [Column("is_active")]
         public bool? IsActive { get; set; }
 
+        [Column("default_allowance_ids")]
+        public string? DefaultAllowanceIds { get; set; }
+
         [Column("created_at")]
         public DateTime? CreatedAt { get; set; }
 

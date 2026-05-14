@@ -232,53 +232,67 @@ namespace MISA.QLSX.Core.Services
         {
             if (fileStream == null)
             {
-                throw new ValidateException("File stream is null", "Noi dung tep khong hop le");
+                throw new ValidateException("File stream is null", "Nội dung tệp không hợp lệ");
             }
 
             if (sizeBytes <= 0)
             {
-                throw new ValidateException("File is empty", "Tep tai len khong duoc rong");
+                throw new ValidateException("File is empty", "Tệp tải lên không được rỗng");
             }
 
             if (sizeBytes > _maxFileSizeBytes)
             {
                 var maxMb = _maxFileSizeBytes / (1024 * 1024);
-                throw new ValidateException("File size exceeds limit", $"Kich thuoc tep vuot qua gioi han {maxMb}MB");
+                throw new ValidateException("File size exceeds limit", $"Kích thước tệp vượt quá giới hạn {maxMb}MB");
             }
 
             if (string.IsNullOrWhiteSpace(originalName))
             {
-                throw new ValidateException("File name is required", "Ten tep khong duoc de trong");
+                throw new ValidateException("File name is required", "Tên tệp không được để trống");
             }
 
-            var extension = Path.GetExtension(originalName)?.ToLowerInvariant() ?? string.Empty;
+            // Chống Path Traversal bằng cách lấy tên tệp thực tế
+            var fileName = Path.GetFileName(originalName);
+            if (fileName != originalName)
+            {
+                throw new ValidateException("Invalid filename", "Tên tệp chứa ký tự không hợp lệ");
+            }
+
+            var extension = Path.GetExtension(fileName)?.ToLowerInvariant() ?? string.Empty;
             if (!_allowedExtensions.Contains(extension))
             {
-                throw new ValidateException("File extension is not allowed", "Dinh dang tep khong duoc ho tro");
+                throw new ValidateException("File extension is not allowed", "Định dạng tệp không được hỗ trợ");
             }
 
             if (request == null)
             {
-                throw new ValidateException("Request is null", "Thong tin metadata tep khong hop le");
+                throw new ValidateException("Request is null", "Thông tin metadata tệp không hợp lệ");
             }
 
             if (string.IsNullOrWhiteSpace(request.ModuleName))
             {
-                throw new ValidateException("ModuleName is required", "ModuleName khong duoc de trong");
+                throw new ValidateException("ModuleName is required", "ModuleName không được để trống");
             }
 
             if (string.IsNullOrWhiteSpace(request.EntityName))
             {
-                throw new ValidateException("EntityName is required", "EntityName khong duoc de trong");
+                throw new ValidateException("EntityName is required", "EntityName không được để trống");
             }
 
             if (!request.EntityId.HasValue || request.EntityId.Value == Guid.Empty)
             {
-                throw new ValidateException("EntityId is required", "EntityId khong duoc de trong");
+                throw new ValidateException("EntityId is required", "EntityId không được để trống");
             }
 
             request.ModuleName = request.ModuleName.Trim().ToLowerInvariant();
             request.EntityName = request.EntityName.Trim().ToLowerInvariant();
+
+            // Kiểm tra Whitelist Module/Entity để đảm bảo an toàn lưu trữ và truy vấn
+            var allowedModules = new HashSet<string> { "hr", "contract", "attendance", "business-trip", "salary", "evaluation" };
+            if (!allowedModules.Contains(request.ModuleName))
+            {
+                throw new ValidateException("Module not allowed", "Module không được phép tải tệp lên hệ thống");
+            }
             request.Purpose = request.Purpose?.Trim().ToLowerInvariant();
         }
 

@@ -23,16 +23,35 @@ namespace MISA.QLSX.Core.Services
 
             contract.UpdatedAt = DateTime.Now;
 
-            if (contract.IsSigned == true)
+            // Logic tự động xác định trạng thái hợp đồng
+            var today = DateTime.Today;
+
+            if (contract.TerminatedAt != null)
+            {
+                contract.ContractStatus = "terminated";
+            }
+            else if (contract.EndDate != null && contract.EndDate < today)
+            {
+                contract.ContractStatus = "expired";
+            }
+            else if (contract.IsSigned == true)
             {
                 if (contract.SignedAt == null)
                     contract.SignedAt = DateTime.Now;
 
-                // Nếu đã ký thì tự động chuyển trạng thái sang active nếu đang là draft/null
-                if (string.IsNullOrEmpty(contract.ContractStatus) || contract.ContractStatus.ToLower() == "draft")
+                // Nếu ngày hiệu lực chưa đến thì là 'signed', nếu đã đến/qua rồi thì là 'active'
+                if (contract.EffectiveDate != null && contract.EffectiveDate <= today)
                 {
                     contract.ContractStatus = "active";
                 }
+                else
+                {
+                    contract.ContractStatus = "signed";
+                }
+            }
+            else
+            {
+                contract.ContractStatus = "draft";
             }
 
             return Task.CompletedTask;
@@ -78,6 +97,11 @@ namespace MISA.QLSX.Core.Services
 
             if (await _contractRepository.IsValueExistAsync(nameof(Contract.ContractCode), contract.ContractCode, ignoreId))
                 throw new ValidateException("ContractCode duplicate", "Mã hợp đồng đã tồn tại");
+        }
+
+        public async Task<List<Allowance>> GetAllowancesByContractIdAsync(Guid contractId)
+        {
+            return await _contractRepository.GetAllowancesByContractIdAsync(contractId);
         }
     }
 }

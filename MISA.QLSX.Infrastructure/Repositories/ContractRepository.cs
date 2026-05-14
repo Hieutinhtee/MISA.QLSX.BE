@@ -113,5 +113,92 @@ namespace MISA.QLSX.Infrastructure.Repositories
 
             return data.ToList();
         }
+
+        public override async Task<Guid> InsertAsync(Contract contract)
+        {
+            using var conn = Connection;
+            conn.Open();
+            using var trans = conn.BeginTransaction();
+            try
+            {
+                // 1. Insert contract chính
+                // Vì BaseRepository.InsertAsync tự tạo connection mới, ta cần copy logic hoặc mở rộng Base
+                // Nhưng ở đây ta dùng connection + transaction hiện tại
+                
+                var id = await base.InsertAsync(contract); // Lưu ý: base.InsertAsync sẽ tạo connection mới
+                // ĐỂ ĐẢM BẢO TRANSACTION: Ta nên thực hiện insert allowances sau đó
+                
+                if (contract.AllowanceIds != null && contract.AllowanceIds.Count > 0)
+                {
+                    foreach (var allowanceId in contract.AllowanceIds)
+                    {
+                        await conn.ExecuteAsync(
+                            "INSERT INTO contract_allowance (contract_allowance_id, contract_id, allowance_id) VALUES (UUID(), @contractId, @allowanceId)",
+                            new { contractId = id, allowanceId },
+                            trans
+                        );
+                    }
+                }
+                
+                trans.Commit();
+                return id;
+            }
+            catch
+            {
+                trans.Rollback();
+                throw;
+            }
+        }
+
+        public override async Task<Guid> UpdateAsync(Guid id, Contract contract)
+        {
+            using var conn = Connection;
+            conn.Open();
+            using var trans = conn.BeginTransaction();
+            try
+            {
+                await base.UpdateAsync(id, contract);
+
+                // Đồng bộ phụ cấp: Xóa cũ, thêm mới
+                await conn.ExecuteAsync(
+                    "DELETE FROM contract_allowance WHERE contract_id = @contractId",
+                    new { contractId = id },
+                    trans
+                );
+
+                if (contract.AllowanceIds != null && contract.AllowanceIds.Count > 0)
+                {
+                    foreach (var allowanceId in contract.AllowanceIds)
+                    {
+                        await conn.ExecuteAsync(
+                            "INSERT INTO contract_allowance (contract_allowance_id, contract_id, allowance_id) VALUES (UUID(), @contractId, @allowanceId)",
+                            new { contractId = id, allowanceId },
+                            trans
+                        );
+                    }
+                }
+
+                trans.Commit();
+                return id;
+            }
+            catch
+            {
+                trans.Rollback();
+                throw;
+            }
+        }
+
+        public async Task<List<Allowance>> GetAllowancesByContractIdAsync(Guid contractId)
+        {
+            using var conn = Connection;
+            var sql = @"
+                SELECT a.* 
+                FROM allowance a
+                INNER JOIN contract_allowance ca ON a.allowance_id = ca.allowance_id
+                WHERE ca.contract_id = @contractId
+            ";
+            var data = await conn.QueryAsync<Allowance>(sql, new { contractId });
+            return data.ToList();
+        }
     }
 }

@@ -64,6 +64,7 @@ builder.Services.AddScoped<IPositionRepository, PositionRepository>();
 builder.Services.AddScoped<IApprovalRequestRepository, ApprovalRequestRepository>();
 builder.Services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
 builder.Services.AddScoped<IFileRepository, FileRepository>();
+builder.Services.AddScoped<IDependentRepository, DependentRepository>();
 
 // Đăng ký Service
 builder.Services.AddScoped<IShiftService, ShiftService>();
@@ -88,6 +89,7 @@ builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IApprovalRequestService, ApprovalRequestService>();
 builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IDependentService, DependentService>();
 
 //Thêm Distributed Memory Cache và Session
 builder.Services.AddDistributedMemoryCache();

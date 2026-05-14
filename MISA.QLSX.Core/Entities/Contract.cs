@@ -100,5 +100,8 @@ namespace MISA.QLSX.Core.Entities
 
         [Column("updated_at")]
         public DateTime? UpdatedAt { get; set; }
+
+        [NotMapped]
+        public List<Guid> AllowanceIds { get; set; } = new();
     }
 }

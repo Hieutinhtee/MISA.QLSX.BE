@@ -140,6 +140,12 @@ namespace MISA.QLSX.Core.Services
                 created++;
             }
 
+            if (created > 0)
+            {
+                period.UpdatedAt = DateTime.Now;
+                await _salaryPeriodRepository.UpdateAsync(period.SalaryPeriodId!.Value, period);
+            }
+
             return created;
         }
 
@@ -341,6 +347,7 @@ namespace MISA.QLSX.Core.Services
                 decimal insuranceSalaryBase = 0;
                 decimal contractBusinessDaysTotal = 0;
                 decimal totalAllowanceAmount = 0;
+                var allowanceBreakdowns = new Dictionary<string, decimal>();
 
                 foreach (var segment in contractSegments)
                 {
@@ -385,6 +392,12 @@ namespace MISA.QLSX.Core.Services
                                     segmentAllowanceAmount = percentAllowance;
                                 }
                                 totalAllowanceAmount += segmentAllowanceAmount;
+
+                                var allowanceName = allowance.AllowanceName ?? "Phụ cấp khác";
+                                if (allowanceBreakdowns.ContainsKey(allowanceName))
+                                    allowanceBreakdowns[allowanceName] += segmentAllowanceAmount;
+                                else
+                                    allowanceBreakdowns[allowanceName] = segmentAllowanceAmount;
                             }
                         }
                     }
@@ -406,7 +419,7 @@ namespace MISA.QLSX.Core.Services
                         var bonusAmount = a.BonusAmount ?? 0m;
                         var penaltyAmount = a.PenaltyAmount ?? 0m;
                         var overtimeAmount = (a.OvertimeHours ?? 0m) * hourlySalary * overtimeMultiplier;
-                        return new AttendanceBreakdown(a.AttendanceId!.Value, bonusAmount, penaltyAmount, overtimeAmount);
+                        return new AttendanceBreakdown(a.AttendanceId!.Value, a.AttendanceDate!.Value, bonusAmount, penaltyAmount, overtimeAmount);
                     })
                     .ToList();
 
@@ -447,7 +460,8 @@ namespace MISA.QLSX.Core.Services
                 // taxableSalary     : thu nhập chịu thuế = gross - BH - giảm trừ bản thân - giảm trừ gia cảnh.
                 //                     Luôn >= 0 để tránh thuế âm (Math.Max bảo vệ trường hợp lương nhỏ).
                 var personalDeduction = deductionPolicy?.PersonalDeductionAmount ?? 0m;
-                var dependentDeduction = (deductionPolicy?.DependentDeductionAmount ?? 0m) * (employeeTaxProfile?.DependentCount ?? 0);
+                var dependentCount = employeeTaxProfile?.DependentCount ?? 0;
+                var dependentDeduction = (deductionPolicy?.DependentDeductionAmount ?? 0m) * dependentCount;
                 var taxableSalary = Math.Max(0m, grossSalary - insuranceDeduction - personalDeduction - dependentDeduction);
 
                 // ----------------------------------------------------------------
@@ -492,12 +506,19 @@ namespace MISA.QLSX.Core.Services
                     payroll,
                     allPayrollItems,
                     baseSalaryAmount,
-                    totalAllowance,
+                    allowanceBreakdowns,
                     insuranceDeduction,
                     pitTaxAmount,
-                    attendanceBreakdowns
+                    attendanceBreakdowns,
+                    dependentCount
                 );
                 affected++;
+            }
+
+            if (affected > 0)
+            {
+                period.UpdatedAt = DateTime.Now;
+                await _salaryPeriodRepository.UpdateAsync(period.SalaryPeriodId!.Value, period);
             }
 
             // Trả về số payroll đã tính thành công (payroll locked/paid không được đếm).
@@ -859,10 +880,11 @@ namespace MISA.QLSX.Core.Services
             Payroll payroll,
             List<PayrollItem> allExistingItems,
             decimal baseSalaryAmount,
-            decimal totalAllowance,
+            Dictionary<string, decimal> allowanceBreakdowns,
             decimal insuranceDeduction,
             decimal pitTaxAmount,
-            List<AttendanceBreakdown> attendanceBreakdowns
+            List<AttendanceBreakdown> attendanceBreakdowns,
+            int dependentCount
         )
         {
             if (payroll.PayrollId == null || payroll.PayrollCode == null)
@@ -897,23 +919,26 @@ namespace MISA.QLSX.Core.Services
                 },
             };
 
-            if (totalAllowance > 0)
+            foreach (var kvp in allowanceBreakdowns)
             {
-                items.Add(new PayrollItem
+                if (kvp.Value > 0)
                 {
-                    PayrollItemId = Guid.NewGuid(),
-                    PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "ALLW"),
-                    PayrollId = payroll.PayrollId,
-                    ItemType = "addition",
-                    ItemName = "Phụ cấp cố định",
-                    FormulaComponent = "allowance",
-                    Amount = RoundMoney(totalAllowance),
-                    SourceTable = "manual",
-                    SourceId = null,
-                    Note = "Phụ cấp áp dụng theo kỳ",
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
-                });
+                    items.Add(new PayrollItem
+                    {
+                        PayrollItemId = Guid.NewGuid(),
+                        PayrollItemCode = BuildPayrollItemCode(payroll.PayrollCode, "ALLW"),
+                        PayrollId = payroll.PayrollId,
+                        ItemType = "addition",
+                        ItemName = kvp.Key,
+                        FormulaComponent = "allowance",
+                        Amount = RoundMoney(kvp.Value),
+                        SourceTable = "manual",
+                        SourceId = null,
+                        Note = $"Phụ cấp {kvp.Key}",
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now,
+                    });
+                }
             }
 
             foreach (var attendance in attendanceBreakdowns)
@@ -931,7 +956,7 @@ namespace MISA.QLSX.Core.Services
                         Amount = RoundMoney(attendance.BonusAmount),
                         SourceTable = "attendance",
                         SourceId = attendance.AttendanceId,
-                        Note = "Khoản cộng phát sinh từ chấm công",
+                        Note = $"Khoản cộng phát sinh từ chấm công (Ngày {attendance.Date:dd/MM/yyyy})",
                         CreatedAt = DateTime.Now,
                         UpdatedAt = DateTime.Now,
                     });
@@ -950,7 +975,7 @@ namespace MISA.QLSX.Core.Services
                         Amount = RoundMoney(attendance.OvertimeAmount),
                         SourceTable = "attendance",
                         SourceId = attendance.AttendanceId,
-                        Note = "Khoản cộng từ giờ làm thêm",
+                        Note = $"Khoản cộng từ giờ làm thêm (Ngày {attendance.Date:dd/MM/yyyy})",
                         CreatedAt = DateTime.Now,
                         UpdatedAt = DateTime.Now,
                     });
@@ -969,7 +994,7 @@ namespace MISA.QLSX.Core.Services
                         Amount = RoundMoney(attendance.PenaltyAmount),
                         SourceTable = "attendance",
                         SourceId = attendance.AttendanceId,
-                        Note = "Khoản trừ phát sinh từ chấm công",
+                        Note = $"Khoản trừ phát sinh từ chấm công (Ngày {attendance.Date:dd/MM/yyyy})",
                         CreatedAt = DateTime.Now,
                         UpdatedAt = DateTime.Now,
                     });
@@ -1003,7 +1028,7 @@ namespace MISA.QLSX.Core.Services
                 Amount = RoundMoney(pitTaxAmount),
                 SourceTable = "manual",
                 SourceId = null,
-                Note = "Thuế TNCN theo bậc lũy tiến",
+                Note = $"Thuế TNCN theo bậc lũy tiến (Số NPT: {dependentCount})",
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
             });
@@ -1082,7 +1107,7 @@ namespace MISA.QLSX.Core.Services
             await _payrollSnapshotRepository.InsertAsync(snapshot);
         }
 
-        private record AttendanceBreakdown(Guid AttendanceId, decimal BonusAmount, decimal PenaltyAmount, decimal OvertimeAmount);
+        private record AttendanceBreakdown(Guid AttendanceId, DateTime Date, decimal BonusAmount, decimal PenaltyAmount, decimal OvertimeAmount);
 
         private record ContractSegment(Contract Contract, DateTime StartDate, DateTime EndDate);
     }

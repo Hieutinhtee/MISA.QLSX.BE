@@ -19,6 +19,12 @@ namespace MISA.QLSX.Core.Entities
         [Column("employee_id")]
         public Guid? EmployeeId { get; set; }
 
+        [NotMapped]
+        public string? EmployeeCode { get; set; }
+
+        [NotMapped]
+        public string? FullName { get; set; }
+
         [Column("status")]
         public string? Status { get; set; }
 

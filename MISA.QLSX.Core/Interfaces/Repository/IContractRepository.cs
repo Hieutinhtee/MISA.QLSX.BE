@@ -19,5 +19,7 @@ namespace MISA.QLSX.Core.Interfaces.Repository
             DateTime periodStart,
             DateTime periodEnd
         );
+
+        Task<List<Allowance>> GetAllowancesByContractIdAsync(Guid contractId);
     }
 }
